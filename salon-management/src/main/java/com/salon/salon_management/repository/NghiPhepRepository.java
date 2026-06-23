@@ -23,6 +23,10 @@ public interface NghiPhepRepository
             @Param("maNhanVien") Integer maNhanVien,
             @Param("tuNgay") LocalDate tuNgay,
             @Param("denNgay") LocalDate denNgay);
+
+
+        @Query("SELECT n FROM NghiPhep n WHERE n.nhanVien.maNhanVien = :maNhanVien AND :ngayHen BETWEEN n.tuNgay AND n.denNgay")
+        NghiPhep findByNhanVienIdAndDate(@Param("maNhanVien") Integer maNhanVien, @Param("ngayHen") LocalDate ngayHen);
 } 
     
 

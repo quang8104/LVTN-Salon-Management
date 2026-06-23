@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jun 22, 2026 at 11:36 AM
+-- Generation Time: Jun 23, 2026 at 02:15 PM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -113,7 +113,16 @@ CREATE TABLE IF NOT EXISTS `dich_vu` (
   `anh_gioi_thieu` varchar(255) DEFAULT NULL,
   `trang_thai` int DEFAULT '1',
   PRIMARY KEY (`ma_dich_vu`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `dich_vu`
+--
+
+INSERT INTO `dich_vu` (`ma_dich_vu`, `ten_dich_vu`, `mo_ta`, `gia`, `thoi_gian_thuc_hien`, `anh_gioi_thieu`, `trang_thai`) VALUES
+(1, 'Cắt tóc nam VIP', 'Cắt tóc + gội đầu', 150000.00, 45, 'vip.jpg', 0),
+(3, 'Uốn tóc', 'Uốn tóc nữ', 500000.00, 120, 'uon.jpg', 1),
+(5, 'Nhuộm tóc', 'Nhuộm màu thời trang', 600000.00, 180, 'nhuom.jpg', 1);
 
 -- --------------------------------------------------------
 
@@ -153,7 +162,7 @@ CREATE TABLE IF NOT EXISTS `khach_hang` (
   PRIMARY KEY (`ma_khach_hang`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `sdt` (`sdt`)
-) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `khach_hang`
@@ -161,7 +170,7 @@ CREATE TABLE IF NOT EXISTS `khach_hang` (
 
 INSERT INTO `khach_hang` (`ma_khach_hang`, `email`, `mat_khau`, `ho_ten`, `sdt`, `dia_chi`, `ngay_tao`) VALUES
 (1, 'qqqqqqqq@gmail.com', '123aada2@', 'qqqqqqqqqq', '0202022020', 'qdddddddd', '2026-06-22 15:24:38'),
-(2, 'a@gmail.com', '123456', 'Nguyen Van A', '0909123456', 'Can Tho', '2026-06-22 15:28:45');
+(3, 'a@example.com', '$2a$10$p3sJXIulT5QPenO5cng5o.yUeXnzowWGOebRkFtzZbV/JS9.SyHsG', 'Nguyễn Văn A', '0123456789', '123 Đường ABC', '2026-06-22 19:06:13');
 
 -- --------------------------------------------------------
 
@@ -222,8 +231,18 @@ CREATE TABLE IF NOT EXISTS `nghi_phep` (
   `den_ngay` date NOT NULL,
   `ly_do` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`ma_nghi_phep`),
-  KEY `ma_nhan_vien` (`ma_nhan_vien`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `fk_nghiphep_nhanvien` (`ma_nhan_vien`)
+) ENGINE=MyISAM AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `nghi_phep`
+--
+
+INSERT INTO `nghi_phep` (`ma_nghi_phep`, `ma_nhan_vien`, `tu_ngay`, `den_ngay`, `ly_do`) VALUES
+(2, 1, '2026-07-01', '2026-07-05', 'Về quê'),
+(4, 1, '2026-07-15', '2026-07-16', 'Du lịch'),
+(5, 1, '2026-07-17', '2026-07-17', 'Du lịch'),
+(9, 1, '2026-07-18', '2026-07-19', 'Du lịch');
 
 -- --------------------------------------------------------
 
@@ -240,10 +259,18 @@ CREATE TABLE IF NOT EXISTS `nhan_vien` (
   `sdt` varchar(20) NOT NULL,
   `chuyen_mon` varchar(255) DEFAULT NULL,
   `trang_thai` int DEFAULT '1',
+  `vai_tro` varchar(20) NOT NULL DEFAULT 'NHAN_VIEN',
   PRIMARY KEY (`ma_nhan_vien`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `sdt` (`sdt`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `nhan_vien`
+--
+
+INSERT INTO `nhan_vien` (`ma_nhan_vien`, `email`, `mat_khau`, `ho_ten`, `sdt`, `chuyen_mon`, `trang_thai`, `vai_tro`) VALUES
+(1, 'nv01@gmail.com', '$2a$10$u6uRydZNOmwlv06hRVXKb.5Sni78piiydXZUQKnW8sVvnnz7yYhXW', 'Nguyễn Văn A Updated', '0999999999', 'Uốn tóc', 0, 'NHAN_VIEN');
 
 -- --------------------------------------------------------
 
