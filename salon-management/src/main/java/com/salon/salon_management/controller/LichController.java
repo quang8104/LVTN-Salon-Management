@@ -1,5 +1,6 @@
 package com.salon.salon_management.controller;
 
+import com.salon.salon_management.service.DichVuService;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
@@ -21,18 +22,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.salon.salon_management.dto.LichCreateRequest;
 import com.salon.salon_management.dto.LichResponse;
+import com.salon.salon_management.dto.SuaLichRequest;
+import com.salon.salon_management.entity.Lich;
 import com.salon.salon_management.service.LichService;
 
 @RestController
 @RequestMapping("/api/lich")
 @CrossOrigin(origins = "*")
 public class LichController {
+    private final DichVuService dichVuService;
     private LichService lichService;
 
     
 
-    public LichController(LichService lichService) {
+    public LichController(LichService lichService, DichVuService dichVuService) {
         this.lichService = lichService;
+        this.dichVuService = dichVuService;
     }
 
     //lay slot ranh trong ngay
@@ -142,6 +147,38 @@ public class LichController {
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body(createErrorResponse(ex.getMessage()));
         }
+    }
+
+    //hoan tat
+    @PutMapping("/{id}/hoan-tat")
+    public String hoanTat(@PathVariable Integer id){
+
+        String lich=lichService.hoanTat(id);
+        return "Hoàn tất lịch hẹn thành công";
+    }
+
+    //xac nhan lich
+    @PutMapping("/{id}/xac-nhan")
+    public String xacNhan(
+            @PathVariable Integer id){
+
+        return lichService.xacNhan(id);
+    }
+
+    //huy lich
+    @PutMapping("/{id}/huy")
+    public String huy(
+            @PathVariable Integer id){
+
+        return lichService.huy(id);
+    }
+    
+    @PutMapping("/{id}")
+    public String suaLich(
+            @PathVariable Integer id,
+            @RequestBody SuaLichRequest request){
+
+        return lichService.suaLich(id, request);
     }
     
     // Helper

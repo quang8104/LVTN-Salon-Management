@@ -1,17 +1,22 @@
 package com.salon.salon_management.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.aspectj.apache.bcel.Repository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.salon.salon_management.dto.LichCreateRequest;
 import com.salon.salon_management.dto.LichResponse;
+import com.salon.salon_management.dto.SuaLichRequest;
 import com.salon.salon_management.entity.Lich;
+import com.salon.salon_management.entity.LichHenLog;
 import com.salon.salon_management.repository.KhachHangRepository;
+import com.salon.salon_management.repository.LichHenLogRepository;
 import com.salon.salon_management.repository.LichRepository;
 import com.salon.salon_management.repository.NghiPhepRepository;
 import com.salon.salon_management.repository.NhanVienRepository;
@@ -22,13 +27,17 @@ public class LichService {
     private KhachHangRepository khachHangRepository;
     private NhanVienRepository nhanVienRepository;
     private NghiPhepRepository nghiPhepRepository;
+    private LichHenLogRepository logRepository;
+    
 
     public LichService(LichRepository lichRepository, KhachHangRepository khachHangRepository,
-            NhanVienRepository nhanVienRepository, NghiPhepRepository nghiPhepRepository) {
+            NhanVienRepository nhanVienRepository, NghiPhepRepository nghiPhepRepository,
+            LichHenLogRepository logRepository) {
         this.lichRepository = lichRepository;
         this.khachHangRepository = khachHangRepository;
         this.nhanVienRepository = nhanVienRepository;
         this.nghiPhepRepository = nghiPhepRepository;
+        this.logRepository = logRepository;
     }
 
     // Hằng số
@@ -186,5 +195,77 @@ public class LichService {
             throw new RuntimeException("Lịch không tồn tại");
         }
         lichRepository.deleteById(id);
+    }
+
+    // Hoan tat lich
+    public String hoanTat(Integer id) {
+
+        Lich lich = lichRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy lịch hẹn"));
+
+        lich.setTrangThai(2);
+
+        lich.setGioKetThucThucTe(LocalTime.now());
+
+        lichRepository.save(lich);
+        return "Hoàn tất lịch hẹn thành công";
+    }
+
+    //Xac nhan lich
+    public String xacNhan(Integer id){
+
+        Lich lich = lichRepository.findById(id)
+                .orElseThrow(() ->
+                    new RuntimeException("Không tìm thấy lịch"));
+
+        lich.setTrangThai(1);
+
+        lichRepository.save(lich);
+
+        return "Xác nhận lịch thành công";
+    }
+    
+
+    //Huy lich
+    public String huy(Integer id){
+
+        Lich lich = lichRepository.findById(id)
+                .orElseThrow(() ->
+                    new RuntimeException("Không tìm thấy lịch"));
+
+        lich.setTrangThai(3);
+
+        lichRepository.save(lich);
+
+        return "Hủy lịch thành công";
+    }
+
+    //Sua lich
+    public String suaLich(
+        Integer id,
+        SuaLichRequest request){
+
+        Lich lich = lichRepository.findById(id).orElseThrow();
+
+        String cu =lich.getNgayHen() + " "+ lich.getGioHen();
+
+        lich.setNgayHen(request.getNgayHen());
+        lich.setGioHen(request.getGioHen());
+
+        lichRepository.save(lich);
+
+        String moi =lich.getNgayHen() + " "+ lich.getGioHen();
+
+        LichHenLog log =new LichHenLog();
+
+        log.setMaLichHen(id);
+        log.setHanhDong("SUA_LICH");
+        log.setNoiDungCu(cu);
+        log.setNoiDungMoi(moi);
+        log.setLyDo(request.getLyDo());
+        log.setThoiGian(LocalDateTime.now());
+
+        logRepository.save(log);
+
+        return "Sửa lịch thành công";
     }
 }
