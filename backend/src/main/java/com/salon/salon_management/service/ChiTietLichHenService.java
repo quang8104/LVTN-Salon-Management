@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.salon.salon_management.dto.ThemDichVuRequest;
+import com.salon.salon_management.dto.TopDichVuDTO;
 import com.salon.salon_management.entity.ChiTietLichHen;
 import com.salon.salon_management.entity.DichVu;
 import com.salon.salon_management.entity.Lich;
@@ -88,5 +89,10 @@ public class ChiTietLichHenService {
 
         return ct;
         
+    }
+
+
+    public List<TopDichVuDTO> topDichVu() {
+        return repository.topDichVu();
     }
 }

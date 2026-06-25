@@ -1,5 +1,6 @@
 package com.salon.salon_management.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.salon.salon_management.dto.HoaDonItemRequest;
 import com.salon.salon_management.dto.TaoHoaDonRequest;
+import com.salon.salon_management.dto.TopSanPhamDTO;
 import com.salon.salon_management.entity.ChiTietHoaDonBH;
 import com.salon.salon_management.entity.HoaDonBanHang;
 import com.salon.salon_management.entity.KhachHang;
@@ -23,13 +25,17 @@ public class HoaDonBanHangService {
     private final ChiTietHoaDonBHRepository chiTietRepository;
     private final SanPhamRepository sanPhamRepository;
     private final KhachHangRepository khachHangRepository;
+    private final ChiTietHoaDonBHRepository chiTietHDRepository;
 
+    
     public HoaDonBanHangService(HoaDonBanHangRepository hoaDonRepository, ChiTietHoaDonBHRepository chiTietRepository,
-            SanPhamRepository sanPhamRepository, KhachHangRepository khachHangRepository) {
+            SanPhamRepository sanPhamRepository, KhachHangRepository khachHangRepository,
+            ChiTietHoaDonBHRepository chiTietHDRepository) {
         this.hoaDonRepository = hoaDonRepository;
         this.chiTietRepository = chiTietRepository;
         this.sanPhamRepository = sanPhamRepository;
         this.khachHangRepository = khachHangRepository;
+        this.chiTietHDRepository = chiTietHDRepository;
     }
 
     public HoaDonBanHang taoHoaDon(TaoHoaDonRequest request) {
@@ -123,5 +129,18 @@ public class HoaDonBanHangService {
     public Double doanhThu(){
 
         return hoaDonRepository.tinhDoanhThu();
+    }
+
+    public Double doanhThuNgay(LocalDate ngay){
+        return hoaDonRepository.doanhThuNgay(ngay);
+    }
+
+    public Double doanhThuThang(Integer thang,Integer nam){
+
+        return hoaDonRepository.doanhThuThang(thang, nam);
+    }
+
+    public List<TopSanPhamDTO> topSanPham() {
+        return chiTietHDRepository.topSanPham();
     }
 }

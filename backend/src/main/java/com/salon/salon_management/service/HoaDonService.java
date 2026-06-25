@@ -74,4 +74,5 @@ public class HoaDonService {
     public Double tongDoanhThu(){
         return hoaDonRepository.tongDoanhThu();
     }
+    
 }

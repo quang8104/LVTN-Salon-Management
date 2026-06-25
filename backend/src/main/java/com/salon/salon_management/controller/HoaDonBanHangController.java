@@ -1,5 +1,6 @@
 package com.salon.salon_management.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,9 +9,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.salon.salon_management.dto.TaoHoaDonRequest;
+import com.salon.salon_management.dto.TopSanPhamDTO;
 import com.salon.salon_management.entity.ChiTietHoaDonBH;
 import com.salon.salon_management.entity.HoaDonBanHang;
 import com.salon.salon_management.service.HoaDonBanHangService;
@@ -66,5 +69,23 @@ public class HoaDonBanHangController {
     public Double doanhThu() {
 
         return service.doanhThu();
+    }
+
+    @GetMapping("/doanh-thu-ngay")
+    public Double doanhThuNgay(@RequestParam String ngay){
+
+        return service.doanhThuNgay(
+                LocalDate.parse(ngay));
+    }
+
+    @GetMapping("/doanh-thu-thang")
+    public Double doanhThuThang(@RequestParam Integer thang,@RequestParam Integer nam){
+
+        return service.doanhThuThang(thang, nam);
+    }
+
+    @GetMapping("/top-san-pham")
+    public List<TopSanPhamDTO> topSanPham() {
+        return service.topSanPham();
     }
 }
