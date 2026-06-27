@@ -2,6 +2,7 @@ package com.salon.salon_management.dto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 public class LichCreateRequest {
     private Integer maKhachHang;
@@ -9,7 +10,9 @@ public class LichCreateRequest {
     private LocalDate ngayHen;
     private LocalTime gioHen;
     private String ghiChu;
+    private List<Integer> danhSachDichVu;
 
+    
     public Integer getMaKhachHang() {
         return maKhachHang;
     }
@@ -40,6 +43,14 @@ public class LichCreateRequest {
     public void setGhiChu(String ghiChu) {
         this.ghiChu = ghiChu;
     }
+    public List<Integer> getDanhSachDichVu() {
+        return danhSachDichVu;
+    }
+    public void setDanhSachDichVu(List<Integer> danhSachDichVu) {
+        this.danhSachDichVu = danhSachDichVu;
+    }
+
+    
 
     
 }

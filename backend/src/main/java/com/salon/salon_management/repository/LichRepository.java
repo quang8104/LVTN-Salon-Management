@@ -32,4 +32,5 @@ public interface LichRepository extends JpaRepository<Lich, Integer> {
     List<Lich> checkDuplicateBooking(@Param("maNhanVien") Integer maNhanVien, 
                                   @Param("ngayHen") LocalDate ngayHen, 
                                   @Param("gioHen") LocalTime gioHen);
+
 } 

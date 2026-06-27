@@ -3,6 +3,7 @@ package com.salon.salon_management.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -10,11 +11,16 @@ import org.aspectj.apache.bcel.Repository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.salon.salon_management.dto.ChiTietLichHenResponse;
 import com.salon.salon_management.dto.LichCreateRequest;
 import com.salon.salon_management.dto.LichResponse;
 import com.salon.salon_management.dto.SuaLichRequest;
+import com.salon.salon_management.entity.ChiTietLichHen;
+import com.salon.salon_management.entity.DichVu;
 import com.salon.salon_management.entity.Lich;
 import com.salon.salon_management.entity.LichHenLog;
+import com.salon.salon_management.repository.ChiTietLichHenRepository;
+import com.salon.salon_management.repository.DichVuRepository;
 import com.salon.salon_management.repository.KhachHangRepository;
 import com.salon.salon_management.repository.LichHenLogRepository;
 import com.salon.salon_management.repository.LichRepository;
@@ -28,16 +34,27 @@ public class LichService {
     private NhanVienRepository nhanVienRepository;
     private NghiPhepRepository nghiPhepRepository;
     private LichHenLogRepository logRepository;
+    private final ChiTietLichHenRepository chiTietRepository;
+    private final DichVuRepository dichVuRepository;
+    private final HoaDonService hoaDonService;
+    
+
+    
+
     
 
     public LichService(LichRepository lichRepository, KhachHangRepository khachHangRepository,
             NhanVienRepository nhanVienRepository, NghiPhepRepository nghiPhepRepository,
-            LichHenLogRepository logRepository) {
+            LichHenLogRepository logRepository, ChiTietLichHenRepository chiTietRepository,
+            DichVuRepository dichVuRepository, HoaDonService hoaDonService) {
         this.lichRepository = lichRepository;
         this.khachHangRepository = khachHangRepository;
         this.nhanVienRepository = nhanVienRepository;
         this.nghiPhepRepository = nghiPhepRepository;
         this.logRepository = logRepository;
+        this.chiTietRepository = chiTietRepository;
+        this.dichVuRepository = dichVuRepository;
+        this.hoaDonService = hoaDonService;
     }
 
     // Hằng số
@@ -115,6 +132,48 @@ public class LichService {
         lich.setTongThoiGian(30);
 
         Lich saved = lichRepository.save(lich);
+        
+        int tongThoiGian = 0;
+
+        double tongTien = 0;
+        for(Integer maDichVu : request.getDanhSachDichVu()){
+
+            DichVu dichVu = dichVuRepository.findById(maDichVu)
+                    .orElseThrow(() ->
+                        new RuntimeException("Không tìm thấy dịch vụ"));
+
+            ChiTietLichHen ct = new ChiTietLichHen();
+
+            ct.setLichHen(saved);
+
+            ct.setDichVu(dichVu);
+
+            ct.setDonGia(dichVu.getGia());
+
+            ct.setThoiGian(dichVu.getThoiGianThucHien());
+
+            chiTietRepository.save(ct);
+
+            tongThoiGian += dichVu.getThoiGianThucHien();
+
+            tongTien += dichVu.getGia();
+
+        }
+        saved.setTongThoiGian(tongThoiGian);
+
+        saved.setGioKetThucDuKien(
+
+                request.getGioHen()
+
+                .plusMinutes(tongThoiGian)
+
+        );
+
+        saved = lichRepository.save(saved);
+
+        // tạo hóa đơn
+        hoaDonService.taoHoaDon(saved.getId());
+
         return convertToResponse(saved);
     }
 
@@ -150,6 +209,37 @@ public class LichService {
         response.setTongThoiGian(lich.getTongThoiGian());
         response.setTrangThai(lich.getTrangThai());
         response.setTrangThaiText(getTrangThaiText(lich.getTrangThai()));
+
+        List<ChiTietLichHen> dsChiTiet =chiTietRepository.findByLichHen_Id(lich.getId());
+
+        List<ChiTietLichHenResponse> dsResponse = new ArrayList<>();
+
+        for (ChiTietLichHen ct : dsChiTiet) {
+
+            ChiTietLichHenResponse item = new ChiTietLichHenResponse();
+
+            item.setMaDichVu(ct.getDichVu().getMaDichVu());
+
+            item.setTenDichVu(ct.getDichVu().getTenDichVu());
+
+            item.setDonGia(ct.getDonGia());
+
+            item.setThoiGian(ct.getThoiGian());
+
+            dsResponse.add(item);
+
+        }
+
+        Double tongTien = dsChiTiet.stream()
+
+        .map(ChiTietLichHen::getDonGia)
+
+        .reduce(0.0, Double::sum);
+
+        response.setDanhSachDichVu(dsResponse);
+
+        response.setTongTien(tongTien);
+
         return response;
     }
 
@@ -163,6 +253,18 @@ public class LichService {
             case 3 -> "Hủy";
             default -> "Không xác định";
         };
+    }
+
+    public List<LichResponse> getAllLich() {
+
+        return lichRepository.findAll()
+
+                .stream()
+
+                .map(this::convertToResponse)
+
+                .toList();
+
     }
 
     // Lay chi tiet

@@ -77,6 +77,34 @@ public class LichController {
             return ResponseEntity.badRequest().body(createErrorResponse(ex.getMessage()));
         }
     }
+
+    //Lấy tất cả lịch hẹn
+    @GetMapping
+    public ResponseEntity<?> getAllLich() {
+
+        try {
+
+            List<LichResponse> list = lichService.getAllLich();
+
+            Map<String, Object> result = new HashMap<>();
+
+            result.put("timestamp", java.time.LocalDateTime.now());
+
+            result.put("status", 200);
+
+            result.put("data", list);
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception ex) {
+
+            return ResponseEntity.badRequest()
+
+                    .body(createErrorResponse(ex.getMessage()));
+
+        }
+
+    }
     
     //Lay chi tiet lich
     @GetMapping("/{id}")

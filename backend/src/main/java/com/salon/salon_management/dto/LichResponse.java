@@ -2,6 +2,7 @@ package com.salon.salon_management.dto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 public class LichResponse {
     private Integer id;
@@ -17,6 +18,10 @@ public class LichResponse {
     private Integer trangThai;
     private String trangThaiText;
     private String ghiChu;
+
+    private List<ChiTietLichHenResponse> danhSachDichVu;
+
+    private Double tongTien;
 
     public LichResponse() {
     }
@@ -124,5 +129,23 @@ public class LichResponse {
     public void setGhiChu(String ghiChu) {
         this.ghiChu = ghiChu;
     }
+
+    public List<ChiTietLichHenResponse> getDanhSachDichVu() {
+        return danhSachDichVu;
+    }
+
+    public void setDanhSachDichVu(List<ChiTietLichHenResponse> danhSachDichVu) {
+        this.danhSachDichVu = danhSachDichVu;
+    }
+
+    public Double getTongTien() {
+        return tongTien;
+    }
+
+    public void setTongTien(Double tongTien) {
+        this.tongTien = tongTien;
+    }
+
+   
 
 }
