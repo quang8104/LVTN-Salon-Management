@@ -10,13 +10,14 @@ import com.salon.salon_management.entity.NhanVien;
 public interface NhanVienRepository
         extends JpaRepository<NhanVien, Integer> {
     boolean existsByEmail(String email);
+
     boolean existsBySdt(String sdt);
 
     @Query("""
-    SELECT n FROM NhanVien n
-    WHERE n.hoTen LIKE %:keyword%
-    OR n.sdt LIKE %:keyword%
-    OR n.chuyenMon LIKE %:keyword%
-    """)
+            SELECT n FROM NhanVien n
+            WHERE n.hoTen LIKE %:keyword%
+            OR n.sdt LIKE %:keyword%
+            OR n.chuyenMon LIKE %:keyword%
+            """)
     List<NhanVien> search(String keyword);
-} 
+}

@@ -1,5 +1,7 @@
-import api from "./axios";
+import axios from "axios";
+
+const API = "http://localhost:8080/api/nhanvien";
 
 export const getAllNhanVien = () => {
-    return api.get("/nhanvien");
-}
+    return axios.get(API);
+};

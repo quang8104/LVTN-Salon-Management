@@ -12,6 +12,13 @@ import ServiceDetailPage from "./pages/ServiceDetailPage";
 import BookingPage from "./pages/BookingPage";
 import HistoryPage from "./pages/HistoryPage";
 import HistoryDetailPage from "./pages/HistoryDetailPage";
+import AdminLichPage from "./pages/AdminLichPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDichVuPage from "./pages/AdminDichVuPage";
+import AdminSanPhamPage from "./pages/AdminSanPhamPage";
+import AdminNhanVienPage from "./pages/AdminNhanVienPage";
+import AdminHoaDonPage from "./pages/AdminHoaDonPage";
 
 function App() {
     return (
@@ -33,6 +40,15 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
+
+                <Route element={<AdminLayout />}>
+                    <Route path="/admin" element={<AdminDashboardPage />} />
+                    <Route path="/admin/lich-hen" element={<AdminLichPage />} />
+                    <Route path="/admin/dich-vu" element={<AdminDichVuPage />} />
+                    <Route path="/admin/san-pham" element={<AdminSanPhamPage />} />
+                    <Route path="/admin/nhan-vien" element={<AdminNhanVienPage />} />
+                    <Route path="/admin/hoa-don" element={<AdminHoaDonPage />} />
+                </Route>
 
             </Routes>
         </BrowserRouter>

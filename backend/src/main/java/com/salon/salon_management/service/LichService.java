@@ -127,10 +127,6 @@ public class LichService {
         lich.setGioHen(request.getGioHen());
         lich.setTrangThai(0); // Cho xac nhan
 
-        // Tinh gio ket thuc du kien (mac dinh 30 phut)
-        lich.setGioKetThucDuKien(request.getGioHen().plusMinutes(30));
-        lich.setTongThoiGian(30);
-
         Lich saved = lichRepository.save(lich);
         
         int tongThoiGian = 0;
@@ -171,7 +167,6 @@ public class LichService {
 
         saved = lichRepository.save(saved);
 
-        // tạo hóa đơn
         hoaDonService.taoHoaDon(saved.getId());
 
         return convertToResponse(saved);
@@ -216,24 +211,22 @@ public class LichService {
 
         for (ChiTietLichHen ct : dsChiTiet) {
 
+            if (ct.getDichVu() == null) {
+                continue;
+            }
+
             ChiTietLichHenResponse item = new ChiTietLichHenResponse();
 
             item.setMaDichVu(ct.getDichVu().getMaDichVu());
-
             item.setTenDichVu(ct.getDichVu().getTenDichVu());
-
             item.setDonGia(ct.getDonGia());
-
             item.setThoiGian(ct.getThoiGian());
 
             dsResponse.add(item);
-
         }
 
-        Double tongTien = dsChiTiet.stream()
-
-        .map(ChiTietLichHen::getDonGia)
-
+        Double tongTien = dsResponse.stream()
+        .map(ChiTietLichHenResponse::getDonGia)
         .reduce(0.0, Double::sum);
 
         response.setDanhSachDichVu(dsResponse);
