@@ -31,7 +31,7 @@ function AdminDashboardPage() {
     const tongDoanhThu = doanhThuDV + doanhThuBH;
 
     return (
-        <div className="container py-5">
+        <div >
             <h2 className="mb-4">Dashboard Admin</h2>
 
             <div className="row g-4">

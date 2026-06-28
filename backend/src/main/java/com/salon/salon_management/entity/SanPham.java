@@ -1,13 +1,15 @@
 package com.salon.salon_management.entity;
 
-import java.math.BigDecimal;
+
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
+
 
 @Entity
 @Table(name = "san_pham")
@@ -25,7 +27,8 @@ public class SanPham {
 
     private Double gia;
 
-    @Column(name = "hinh_anh")
+    @Lob
+    @Column(name = "hinh_anh", columnDefinition = "LONGTEXT")
     private String hinhAnh;
 
     @Column(name = "trang_thai")

@@ -36,3 +36,120 @@ body{
 .banner p{
     font-size:22px;
 }
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background: #f4f6f9;
+}
+
+.admin-sidebar {
+    width: 280px;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #111827, #1f2937);
+    color: white;
+    padding: 24px 18px;
+    position: sticky;
+    top: 0;
+}
+
+.admin-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.admin-logo-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: #f59e0b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.admin-logo h4 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.admin-logo span {
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.admin-menu {
+    margin-top: 28px;
+    gap: 8px;
+}
+
+.admin-link,
+.active-admin-link {
+    color: #d1d5db;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: 0.2s;
+}
+
+.admin-link:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+}
+
+.active-admin-link {
+    background: #f59e0b;
+    color: #111827;
+}
+
+.admin-sidebar-footer {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: 24px;
+}
+
+.admin-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-topbar {
+    height: 76px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.admin-topbar small {
+    color: #6b7280;
+}
+
+.admin-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #111827;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.admin-content {
+    padding: 28px;
+}

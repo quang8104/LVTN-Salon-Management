@@ -17,3 +17,11 @@ export const updateSanPham = (id, data) => {
 export const deleteSanPham = (id) => {
     return axios.delete(`${API}/${id}`);
 };
+
+export const forgotPassword = (data) => {
+    return axios.post(`${API}/forgot-password`, data);
+};
+
+export const resetPassword = (data) => {
+    return axios.post(`${API}/reset-password`, data);
+};

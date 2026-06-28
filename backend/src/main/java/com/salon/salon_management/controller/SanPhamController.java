@@ -29,6 +29,11 @@ public class SanPhamController {
         return service.getAll();
     }
 
+    @GetMapping("/top")
+    public List<SanPham> getTop5() {
+        return service.getTop5();
+    }
+
     @GetMapping("/{id}")
     public SanPham getById(@PathVariable Integer id) {
         return service.getById(id);

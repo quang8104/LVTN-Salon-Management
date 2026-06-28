@@ -1,25 +1,45 @@
+import { Link } from "react-router-dom";
+
 function ProductCard({ product }) {
     return (
-        <div className="card h-100">
-            <img
-                src="https://picsum.photos/300/200"
-                className="card-img-top"
-            />
+        <div className="card h-100 shadow-sm border-0">
+            {product.hinhAnh ? (
+                <img
+                    src={product.hinhAnh}
+                    className="card-img-top"
+                    alt={product.tenSanPham}
+                    style={{
+                        height: "220px",
+                        objectFit: "cover"
+                    }}
+                />
+            ) : (
+                <div
+                    className="bg-light d-flex align-items-center justify-content-center"
+                    style={{ height: "220px" }}
+                >
+                    <span className="text-muted">Không có ảnh</span>
+                </div>
+            )}
 
-            <div className="card-body">
+            <div className="card-body d-flex flex-column">
+                <h5>{product.tenSanPham}</h5>
 
-                <h5>{product.ten}</h5>
+                <p className="text-danger fw-bold">
+                    {Number(product.gia).toLocaleString()} VNĐ
+                </p>
 
-                <p>{product.gia}</p>
+                <p className="text-muted small">
+                    Tồn kho: {product.soLuongTon}
+                </p>
 
-                <button className="btn btn-dark w-100">
-
+                <Link
+                    to={`/san-pham/${product.maSanPham}`}
+                    className="btn btn-dark mt-auto"
+                >
                     Xem chi tiết
-
-                </button>
-
+                </Link>
             </div>
-
         </div>
     );
 }

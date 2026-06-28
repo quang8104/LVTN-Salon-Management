@@ -1,17 +1,10 @@
 package com.salon.salon_management.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "chi_tiet_hoa_don_bh")
-public class ChiTietHoaDonBH {
+@Table(name = "chi_tiet_don_hang")
+public class ChiTietDonHang {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,8 +12,8 @@ public class ChiTietHoaDonBH {
     private Integer maChiTiet;
 
     @ManyToOne
-    @JoinColumn(name = "ma_hoa_don_bh")
-    private HoaDonBanHang hoaDon;
+    @JoinColumn(name = "ma_don_hang")
+    private DonHang donHang;
 
     @ManyToOne
     @JoinColumn(name = "ma_san_pham")
@@ -32,6 +25,9 @@ public class ChiTietHoaDonBH {
     @Column(name = "don_gia")
     private Double donGia;
 
+    @Column(name = "thanh_tien")
+    private Double thanhTien;
+
     public Integer getMaChiTiet() {
         return maChiTiet;
     }
@@ -40,12 +36,12 @@ public class ChiTietHoaDonBH {
         this.maChiTiet = maChiTiet;
     }
 
-    public HoaDonBanHang getHoaDon() {
-        return hoaDon;
+    public DonHang getDonHang() {
+        return donHang;
     }
 
-    public void setHoaDon(HoaDonBanHang hoaDon) {
-        this.hoaDon = hoaDon;
+    public void setDonHang(DonHang donHang) {
+        this.donHang = donHang;
     }
 
     public SanPham getSanPham() {
@@ -72,5 +68,11 @@ public class ChiTietHoaDonBH {
         this.donGia = donGia;
     }
 
-    
+    public Double getThanhTien() {
+        return thanhTien;
+    }
+
+    public void setThanhTien(Double thanhTien) {
+        this.thanhTien = thanhTien;
+    }
 }

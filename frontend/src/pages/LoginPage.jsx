@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { login } from "../api/authApi";
-
 function LoginPage() {
     const navigate = useNavigate();
 
@@ -22,12 +21,27 @@ function LoginPage() {
 
         try {
             const res = await login(form);
+            const data = res.data;
 
-            localStorage.setItem("token", res.data.token);
+            
+
+            console.log("LOGIN RESPONSE:", data);
+            console.log("ROLE:", data.vaiTro);
+
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("vaiTro", data.vaiTro);
+            localStorage.setItem("userId", data.id);
+            localStorage.setItem("hoTen", data.hoTen);
 
             alert("Đăng nhập thành công");
 
-            navigate("/admin");
+            const role = data.vaiTro?.trim().toUpperCase();
+
+            if (role === "ADMIN") {
+                navigate("/admin");
+            } else {
+                navigate("/");
+            }
         } catch (err) {
             console.log(err);
             alert("Sai email hoặc mật khẩu");
@@ -63,6 +77,11 @@ function LoginPage() {
                 <button className="btn btn-primary w-100">
                     Đăng nhập
                 </button>
+                <div className="text-end mt-2">
+                    <Link to="/forgot-password">
+                        Quên mật khẩu?
+                    </Link>
+                </div>
             </form>
         </div>
     );

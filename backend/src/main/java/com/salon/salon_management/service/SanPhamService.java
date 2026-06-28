@@ -9,7 +9,7 @@ import com.salon.salon_management.repository.SanPhamRepository;
 
 @Service
 public class SanPhamService {
-     private final SanPhamRepository repository;
+    private final SanPhamRepository repository;
 
     public SanPhamService(SanPhamRepository repository) {
         this.repository = repository;
@@ -17,6 +17,10 @@ public class SanPhamService {
 
     public List<SanPham> getAll() {
         return repository.findAll();
+    }
+
+    public List<SanPham> getTop5() {
+        return repository.findTop5ByTrangThaiOrderByMaSanPhamDesc(1);
     }
 
     public SanPham getById(Integer id) {
@@ -30,7 +34,6 @@ public class SanPhamService {
     }
 
     public SanPham update(Integer id, SanPham sp) {
-
         SanPham old = getById(id);
 
         old.setTenSanPham(sp.getTenSanPham());
@@ -50,5 +53,4 @@ public class SanPhamService {
     public List<SanPham> search(String keyword) {
         return repository.findByTenSanPhamContaining(keyword);
     }
-
 }

@@ -9,6 +9,7 @@ import {
 function AdminDichVuPage() {
     const [dichVu, setDichVu] = useState([]);
     const [editingId, setEditingId] = useState(null);
+    const [showForm, setShowForm] = useState(false);
 
     const [form, setForm] = useState({
         tenDichVu: "",
@@ -16,7 +17,8 @@ function AdminDichVuPage() {
         gia: "",
         thoiGianThucHien: "",
         anhGioiThieu: "",
-        trangThai: 1
+        trangThai: 1,
+        doiTuong: 2
     });
 
     useEffect(() => {
@@ -35,6 +37,28 @@ function AdminDichVuPage() {
         });
     };
 
+    const changeImage = (e) => {
+        const file = e.target.files[0];
+
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            alert("Vui lòng chọn file hình ảnh");
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onloadend = () => {
+            setForm({
+                ...form,
+                anhGioiThieu: reader.result
+            });
+        };
+
+        reader.readAsDataURL(file);
+    };
+
     const resetForm = () => {
         setForm({
             tenDichVu: "",
@@ -42,9 +66,16 @@ function AdminDichVuPage() {
             gia: "",
             thoiGianThucHien: "",
             anhGioiThieu: "",
-            trangThai: 1
+            trangThai: 1,
+            doiTuong: 2
         });
         setEditingId(null);
+        setShowForm(false);
+    };
+
+    const openCreateForm = () => {
+        resetForm();
+        setShowForm(true);
     };
 
     const submit = async (e) => {
@@ -54,7 +85,8 @@ function AdminDichVuPage() {
             ...form,
             gia: Number(form.gia),
             thoiGianThucHien: Number(form.thoiGianThucHien),
-            trangThai: Number(form.trangThai)
+            trangThai: Number(form.trangThai),
+            doiTuong:Number(form.doiTuong)
         };
 
         if (editingId) {
@@ -71,13 +103,21 @@ function AdminDichVuPage() {
 
     const edit = (item) => {
         setEditingId(item.maDichVu);
+        setShowForm(true);
+
         setForm({
             tenDichVu: item.tenDichVu || "",
             moTa: item.moTa || "",
             gia: item.gia || "",
             thoiGianThucHien: item.thoiGianThucHien || "",
             anhGioiThieu: item.anhGioiThieu || "",
-            trangThai: item.trangThai ?? 1
+            trangThai: item.trangThai ?? 1,
+            doiTuong:item.doiTuong ?? 2
+        });
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
         });
     };
 
@@ -90,146 +130,274 @@ function AdminDichVuPage() {
     };
 
     return (
-        <div className="container py-4">
-            <h2 className="mb-4">Quản lý dịch vụ</h2>
-
-            <div className="card mb-4">
-                <div className="card-header">
-                    {editingId ? "Cập nhật dịch vụ" : "Thêm dịch vụ"}
+        <div>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 className="mb-1">Quản lý dịch vụ</h2>
+                    <p className="text-muted mb-0">
+                        Thêm, cập nhật và quản lý các dịch vụ salon
+                    </p>
                 </div>
 
-                <div className="card-body">
-                    <form onSubmit={submit}>
-                        <div className="row">
-                            <div className="col-md-6 mb-3">
-                                <label>Tên dịch vụ</label>
-                                <input
-                                    className="form-control"
-                                    name="tenDichVu"
-                                    value={form.tenDichVu}
-                                    onChange={change}
-                                    required
-                                />
-                            </div>
+                {!showForm && (
+                    <button className="btn btn-primary" onClick={openCreateForm}>
+                        + Thêm dịch vụ
+                    </button>
+                )}
+            </div>
 
-                            <div className="col-md-3 mb-3">
-                                <label>Giá</label>
-                                <input
-                                    type="number"
-                                    className="form-control"
-                                    name="gia"
-                                    value={form.gia}
-                                    onChange={change}
-                                    required
-                                />
-                            </div>
+            {showForm && (
+                <div className="card border-0 shadow-sm mb-4">
+                    <div className="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                        <span>
+                            {editingId ? "Cập nhật dịch vụ" : "Thêm dịch vụ"}
+                        </span>
 
-                            <div className="col-md-3 mb-3">
-                                <label>Thời gian phút</label>
-                                <input
-                                    type="number"
-                                    className="form-control"
-                                    name="thoiGianThucHien"
-                                    value={form.thoiGianThucHien}
-                                    onChange={change}
-                                    required
-                                />
-                            </div>
-
-                            <div className="col-md-6 mb-3">
-                                <label>Ảnh giới thiệu</label>
-                                <input
-                                    className="form-control"
-                                    name="anhGioiThieu"
-                                    value={form.anhGioiThieu}
-                                    onChange={change}
-                                />
-                            </div>
-
-                            <div className="col-md-3 mb-3">
-                                <label>Trạng thái</label>
-                                <select
-                                    className="form-select"
-                                    name="trangThai"
-                                    value={form.trangThai}
-                                    onChange={change}
-                                >
-                                    <option value={1}>Hoạt động</option>
-                                    <option value={0}>Ngừng</option>
-                                </select>
-                            </div>
-
-                            <div className="col-md-12 mb-3">
-                                <label>Mô tả</label>
-                                <textarea
-                                    className="form-control"
-                                    name="moTa"
-                                    value={form.moTa}
-                                    onChange={change}
-                                />
-                            </div>
-                        </div>
-
-                        <button className="btn btn-primary me-2">
-                            {editingId ? "Cập nhật" : "Thêm"}
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={resetForm}
+                        >
+                            Đóng
                         </button>
+                    </div>
 
-                        {editingId && (
+                    <div className="card-body">
+                        <form onSubmit={submit}>
+                            <div className="row">
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">Tên dịch vụ</label>
+                                    <input
+                                        className="form-control"
+                                        name="tenDichVu"
+                                        value={form.tenDichVu}
+                                        onChange={change}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="col-md-3 mb-3">
+                                    <label className="form-label">Giá</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        name="gia"
+                                        value={form.gia}
+                                        onChange={change}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="col-md-3 mb-3">
+                                    <label className="form-label">Thời gian thực hiện</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        name="thoiGianThucHien"
+                                        value={form.thoiGianThucHien}
+                                        onChange={change}
+                                        required
+                                    />
+                                    <small className="text-muted">Đơn vị: phút</small>
+                                </div>
+
+                                <div className="col-md-8 mb-3">
+                                    <label className="form-label">Ảnh giới thiệu</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="form-control"
+                                        onChange={changeImage}
+                                    />
+
+                                    <small className="text-muted">
+                                        Chọn ảnh từ máy tính. Nên dùng ảnh nhỏ để tránh dữ liệu quá nặng.
+                                    </small>
+                                </div>
+
+                                <div className="col-md-3 mb-3">
+                                <label>Đối tượng</label>
+
+                                <select
+                                className="form-select"
+                                name="doiTuong"
+                                value={form.doiTuong}
+                                onChange={change}
+                                >
+
+                                <option value={0}>Nam</option>
+                                <option value={1}>Nữ</option>
+                                <option value={2}>Unisex</option>
+
+                                </select>
+
+                                </div>
+
+                                <div className="col-md-4 mb-3">
+                                    <label className="form-label">Xem trước</label>
+
+                                    <div
+                                        className="border rounded d-flex align-items-center justify-content-center bg-light"
+                                        style={{ height: "170px" }}
+                                    >
+                                        {form.anhGioiThieu ? (
+                                            <img
+                                                src={form.anhGioiThieu}
+                                                alt="Preview"
+                                                style={{
+                                                    width: "100%",
+                                                    height: "100%",
+                                                    objectFit: "cover",
+                                                    borderRadius: "6px"
+                                                }}
+                                            />
+                                        ) : (
+                                            <span className="text-muted">
+                                                Chưa chọn ảnh
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="col-md-3 mb-3">
+                                    <label className="form-label">Trạng thái</label>
+                                    <select
+                                        className="form-select"
+                                        name="trangThai"
+                                        value={form.trangThai}
+                                        onChange={change}
+                                    >
+                                        <option value={1}>Hoạt động</option>
+                                        <option value={0}>Ngừng</option>
+                                    </select>
+                                </div>
+
+                                <div className="col-md-12 mb-3">
+                                    <label className="form-label">Mô tả</label>
+                                    <textarea
+                                        className="form-control"
+                                        rows="3"
+                                        name="moTa"
+                                        value={form.moTa}
+                                        onChange={change}
+                                    />
+                                </div>
+                            </div>
+
+                            <button className="btn btn-primary me-2">
+                                {editingId ? "Cập nhật" : "Thêm"}
+                            </button>
+
                             <button
                                 type="button"
                                 className="btn btn-secondary"
                                 onClick={resetForm}
                             >
-                                Hủy sửa
+                                Hủy
                             </button>
-                        )}
-                    </form>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            <div className="card border-0 shadow-sm">
+                <div className="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                    <span>Danh sách dịch vụ</span>
+                    <span className="badge bg-primary">{dichVu.length} dịch vụ</span>
+                </div>
+
+                <div className="card-body p-0">
+                    <table className="table table-hover align-middle mb-0">
+                        <thead className="table-dark">
+                            <tr>
+                                <th>Mã</th>
+                                <th>Ảnh</th>
+                                <th>Tên</th>
+                                <th>Giá</th>
+                                <th>Thời gian</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {dichVu.map((item) => (
+                                <tr key={item.maDichVu}>
+                                    <td>{item.maDichVu}</td>
+
+                                    <td>
+                                        {item.anhGioiThieu ? (
+                                            <img
+                                                src={item.anhGioiThieu}
+                                                alt={item.tenDichVu}
+                                                style={{
+                                                    width: "70px",
+                                                    height: "70px",
+                                                    objectFit: "cover",
+                                                    borderRadius: "10px",
+                                                    border: "1px solid #e5e7eb"
+                                                }}
+                                            />
+                                        ) : (
+                                            <span className="text-muted">
+                                                Không có ảnh
+                                            </span>
+                                        )}
+                                    </td>
+
+                                    <td className="fw-semibold">
+                                        {item.tenDichVu}
+                                    </td>
+
+                                    <td>{item.gia?.toLocaleString()} VNĐ</td>
+
+                                    <td>{item.thoiGianThucHien} phút</td>
+
+                                    <td>
+                                        <span
+                                            className={
+                                                item.trangThai === 1
+                                                    ? "badge bg-success"
+                                                    : "badge bg-secondary"
+                                            }
+                                        >
+                                            {item.trangThai === 1
+                                                ? "Hoạt động"
+                                                : "Ngừng"}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <button
+                                            className="btn btn-warning btn-sm me-2"
+                                            onClick={() => edit(item)}
+                                        >
+                                            Sửa
+                                        </button>
+
+                                        <button
+                                            className="btn btn-danger btn-sm"
+                                            onClick={() =>
+                                                remove(item.maDichVu)
+                                            }
+                                        >
+                                            Xóa
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+
+                            {dichVu.length === 0 && (
+                                <tr>
+                                    <td colSpan="7" className="text-center py-4">
+                                        Chưa có dịch vụ nào
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
-            <table className="table table-bordered table-hover">
-                <thead className="table-dark">
-                    <tr>
-                        <th>Mã</th>
-                        <th>Tên</th>
-                        <th>Giá</th>
-                        <th>Thời gian</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {dichVu.map((item) => (
-                        <tr key={item.maDichVu}>
-                            <td>{item.maDichVu}</td>
-                            <td>{item.tenDichVu}</td>
-                            <td>{item.gia?.toLocaleString()} VNĐ</td>
-                            <td>{item.thoiGianThucHien} phút</td>
-                            <td>
-                                {item.trangThai === 1
-                                    ? "Hoạt động"
-                                    : "Ngừng"}
-                            </td>
-                            <td>
-                                <button
-                                    className="btn btn-warning btn-sm me-2"
-                                    onClick={() => edit(item)}
-                                >
-                                    Sửa
-                                </button>
-
-                                <button
-                                    className="btn btn-danger btn-sm"
-                                    onClick={() => remove(item.maDichVu)}
-                                >
-                                    Xóa
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
         </div>
     );
 }

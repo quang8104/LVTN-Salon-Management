@@ -33,6 +33,17 @@ public class DichVu {
     @Column(name = "trang_thai")
     private Integer trangThai;
 
+    @Column(name = "doi_tuong")
+    private Integer doiTuong;
+
+    public Integer getDoiTuong() {
+        return doiTuong;
+    }
+
+    public void setDoiTuong(Integer doiTuong) {
+        this.doiTuong = doiTuong;
+    }
+
     public Integer getMaDichVu() {
         return maDichVu;
     }
