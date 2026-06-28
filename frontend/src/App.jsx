@@ -26,6 +26,7 @@ import OrderSuccessPage from "./pages/OrderSuccessPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
+import BankTransferPage from "./pages/BankTransferPage";
 
 function App() {
     return (
@@ -47,6 +48,7 @@ function App() {
                     <Route path="/dat-hang-thanh-cong/:id" element={<OrderSuccessPage />} />
                     <Route path="/thong-tin" element={<ProfilePage />} />
                     <Route path="/doi-mat-khau" element={<ChangePasswordPage />} />
+                    <Route path="/thanh-toan-ngan-hang/:id" element={<BankTransferPage />} />
                 </Route>
 
                 {/* Không dùng layout */}

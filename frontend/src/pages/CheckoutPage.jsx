@@ -1,19 +1,37 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import Select from "react-select";
+
 import { taoDonHang } from "../api/donHangApi";
 import { getKhachHangById } from "../api/khachHangApi";
+import {
+    getProvinces,
+    getDistricts,
+    getWards
+} from "../utils/addressHelper";
 
 function CheckoutPage() {
     const navigate = useNavigate();
 
     const [cart, setCart] = useState([]);
 
+    const [provinces] = useState(getProvinces());
+    const [districts, setDistricts] = useState([]);
+    const [wards, setWards] = useState([]);
+
     const [form, setForm] = useState({
         hoTenNguoiNhan: "",
         soDienThoai: "",
+
+        tinhThanhCode: "",
         tinhThanh: "",
+
+        quanHuyenCode: "",
         quanHuyen: "",
+
+        phuongXaCode: "",
         phuongXa: "",
+
         diaChiCuThe: "",
         ghiChu: "",
         phuongThucThanhToan: "COD"
@@ -27,6 +45,7 @@ function CheckoutPage() {
 
     const loadCustomerInfo = async () => {
         const userId = localStorage.getItem("userId");
+
         if (!userId) return;
 
         try {
@@ -35,8 +54,7 @@ function CheckoutPage() {
             setForm((prev) => ({
                 ...prev,
                 hoTenNguoiNhan: res.data.hoTen || "",
-                soDienThoai: res.data.sdt || "",
-                diaChiCuThe: res.data.diaChi || ""
+                soDienThoai: res.data.sdt || ""
             }));
         } catch (error) {
             console.log(error);
@@ -47,6 +65,65 @@ function CheckoutPage() {
         setForm({
             ...form,
             [e.target.name]: e.target.value
+        });
+    };
+
+    const provinceOptions = provinces.map((item) => ({
+        value: item.code,
+        label: item.name
+    }));
+
+    const districtOptions = districts.map((item) => ({
+        value: item.code,
+        label: item.name
+    }));
+
+    const wardOptions = wards.map((item) => ({
+        value: item.code,
+        label: item.name
+    }));
+
+    const handleProvinceChange = (selected) => {
+        const code = selected?.value || "";
+        const province = provinces.find((item) => item.code === code);
+
+        setForm({
+            ...form,
+            tinhThanhCode: code,
+            tinhThanh: province?.name || "",
+            quanHuyenCode: "",
+            quanHuyen: "",
+            phuongXaCode: "",
+            phuongXa: ""
+        });
+
+        setDistricts(code ? getDistricts(code) : []);
+        setWards([]);
+    };
+
+    const handleDistrictChange = (selected) => {
+        const code = selected?.value || "";
+        const district = districts.find((item) => item.code === code);
+
+        setForm({
+            ...form,
+            quanHuyenCode: code,
+            quanHuyen: district?.name || "",
+            phuongXaCode: "",
+            phuongXa: ""
+        });
+
+        setWards(code ? getWards(form.tinhThanhCode, code) : []);
+    };
+
+    const handleWardChange = (selected) => {
+        const code = selected?.value || "";
+        const ward = wards.find((item) => item.code === code);
+
+        setForm({
+            ...form,
+            phuongXaCode: code,
+            phuongXa: ward?.name || ""
         });
     };
 
@@ -74,13 +151,28 @@ function CheckoutPage() {
 
         const phoneRegex = /^(03|05|07|08|09)[0-9]{8}$/;
 
+        if (!form.hoTenNguoiNhan.trim()) {
+            alert("Vui lòng nhập họ tên người nhận");
+            return;
+        }
+
         if (!phoneRegex.test(form.soDienThoai)) {
             alert("Số điện thoại không đúng định dạng Việt Nam");
             return;
         }
 
+        if (
+            !form.tinhThanh ||
+            !form.quanHuyen ||
+            !form.phuongXa ||
+            !form.diaChiCuThe.trim()
+        ) {
+            alert("Vui lòng nhập đầy đủ địa chỉ nhận hàng");
+            return;
+        }
+
         const diaChiDayDu = [
-            form.diaChiCuThe,
+            form.diaChiCuThe.trim(),
             form.phuongXa,
             form.quanHuyen,
             form.tinhThanh
@@ -90,7 +182,7 @@ function CheckoutPage() {
 
         const request = {
             maKhachHang: Number(maKhachHang),
-            hoTenNguoiNhan: form.hoTenNguoiNhan,
+            hoTenNguoiNhan: form.hoTenNguoiNhan.trim(),
             soDienThoai: form.soDienThoai,
             diaChi: diaChiDayDu,
             ghiChu: form.ghiChu,
@@ -107,12 +199,20 @@ function CheckoutPage() {
             localStorage.removeItem("cart");
             window.dispatchEvent(new Event("cartUpdated"));
 
-            alert("Đặt hàng thành công. Đơn hàng đang chờ admin xác nhận.");
+            window.dispatchEvent(new Event("cartUpdated"));
 
-            navigate(`/dat-hang-thanh-cong/${res.data.maDonHang}`);
+            if (form.phuongThucThanhToan === "BANK_TRANSFER") {
+                navigate(`/thanh-toan-ngan-hang/${res.data.maDonHang}`);
+            } else {
+                alert("Đặt hàng thành công. Đơn hàng đang chờ admin xác nhận.");
+                navigate(`/dat-hang-thanh-cong/${res.data.maDonHang}`);
+            }
         } catch (error) {
             console.log(error);
-            alert("Đặt hàng thất bại. Vui lòng kiểm tra tồn kho hoặc thông tin giao hàng.");
+            alert(
+                error.response?.data ||
+                "Đặt hàng thất bại. Vui lòng kiểm tra tồn kho hoặc thông tin giao hàng."
+            );
         }
     };
 
@@ -120,6 +220,7 @@ function CheckoutPage() {
         return (
             <div className="container py-5 text-center">
                 <h3>Giỏ hàng đang trống</h3>
+
                 <p className="text-muted">
                     Bạn chưa có sản phẩm nào để thanh toán.
                 </p>
@@ -148,6 +249,7 @@ function CheckoutPage() {
                                     <label className="form-label">
                                         Họ tên người nhận
                                     </label>
+
                                     <input
                                         className="form-control"
                                         name="hoTenNguoiNhan"
@@ -155,8 +257,9 @@ function CheckoutPage() {
                                         onChange={change}
                                         required
                                     />
+
                                     <small className="text-muted">
-                                        Có thể thay đổi nếu người nhận khác chủ tài khoản.
+                                        Có thể sửa nếu người nhận khác chủ tài khoản.
                                     </small>
                                 </div>
 
@@ -164,6 +267,7 @@ function CheckoutPage() {
                                     <label className="form-label">
                                         Số điện thoại
                                     </label>
+
                                     <input
                                         className="form-control"
                                         name="soDienThoai"
@@ -175,7 +279,8 @@ function CheckoutPage() {
                                 </div>
 
                                 <div className="alert alert-light border small">
-                                    Nhập địa chỉ theo từng phần để dễ giao hàng và xác định nơi nhận.
+                                    Chọn địa chỉ theo từng cấp để giao hàng chính xác hơn.
+                                    Bạn có thể gõ để tìm nhanh.
                                 </div>
 
                                 <div className="row">
@@ -183,13 +288,19 @@ function CheckoutPage() {
                                         <label className="form-label">
                                             Tỉnh/Thành phố
                                         </label>
-                                        <input
-                                            className="form-control"
-                                            name="tinhThanh"
-                                            value={form.tinhThanh}
-                                            onChange={change}
-                                            placeholder="VD: TP.HCM"
-                                            required
+
+                                        <Select
+                                            options={provinceOptions}
+                                            value={
+                                                provinceOptions.find(
+                                                    (item) =>
+                                                        item.value === form.tinhThanhCode
+                                                ) || null
+                                            }
+                                            onChange={handleProvinceChange}
+                                            placeholder="Tìm tỉnh/thành..."
+                                            isClearable
+                                            noOptionsMessage={() => "Không tìm thấy"}
                                         />
                                     </div>
 
@@ -197,13 +308,20 @@ function CheckoutPage() {
                                         <label className="form-label">
                                             Quận/Huyện
                                         </label>
-                                        <input
-                                            className="form-control"
-                                            name="quanHuyen"
-                                            value={form.quanHuyen}
-                                            onChange={change}
-                                            placeholder="VD: Quận 1"
-                                            required
+
+                                        <Select
+                                            options={districtOptions}
+                                            value={
+                                                districtOptions.find(
+                                                    (item) =>
+                                                        item.value === form.quanHuyenCode
+                                                ) || null
+                                            }
+                                            onChange={handleDistrictChange}
+                                            placeholder="Tìm quận/huyện..."
+                                            isDisabled={!form.tinhThanhCode}
+                                            isClearable
+                                            noOptionsMessage={() => "Không tìm thấy"}
                                         />
                                     </div>
 
@@ -211,36 +329,49 @@ function CheckoutPage() {
                                         <label className="form-label">
                                             Phường/Xã
                                         </label>
-                                        <input
-                                            className="form-control"
-                                            name="phuongXa"
-                                            value={form.phuongXa}
-                                            onChange={change}
-                                            placeholder="VD: Bến Nghé"
-                                            required
+
+                                        <Select
+                                            options={wardOptions}
+                                            value={
+                                                wardOptions.find(
+                                                    (item) =>
+                                                        item.value === form.phuongXaCode
+                                                ) || null
+                                            }
+                                            onChange={handleWardChange}
+                                            placeholder="Tìm phường/xã..."
+                                            isDisabled={!form.quanHuyenCode}
+                                            isClearable
+                                            noOptionsMessage={() => "Không tìm thấy"}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="mb-3">
                                     <label className="form-label">
-                                        Số nhà, tên đường
+                                        Địa chỉ cụ thể
                                     </label>
-                                    <textarea
+
+                                    <input
+                                        type="text"
                                         className="form-control"
-                                        rows="2"
                                         name="diaChiCuThe"
                                         value={form.diaChiCuThe}
                                         onChange={change}
-                                        placeholder="VD: 123 Nguyễn Huệ"
+                                        placeholder="Ví dụ: 300 Nguyễn Văn Cừ"
                                         required
                                     />
+
+                                    <small className="text-muted">
+                                        Nhập số nhà, tên đường, tòa nhà, tầng...
+                                    </small>
                                 </div>
 
                                 <div className="mb-3">
                                     <label className="form-label">
                                         Ghi chú
                                     </label>
+
                                     <textarea
                                         className="form-control"
                                         rows="2"
@@ -332,7 +463,9 @@ function CheckoutPage() {
 
                                 <div className="d-flex justify-content-between mb-3">
                                     <span>Tạm tính</span>
-                                    <strong>{tongTien.toLocaleString()} VNĐ</strong>
+                                    <strong>
+                                        {tongTien.toLocaleString()} VNĐ
+                                    </strong>
                                 </div>
 
                                 <div className="d-flex justify-content-between mb-3">
@@ -346,6 +479,7 @@ function CheckoutPage() {
                                     <span className="fw-bold">
                                         Tổng thanh toán
                                     </span>
+
                                     <strong className="text-danger fs-5">
                                         {tongTien.toLocaleString()} VNĐ
                                     </strong>
