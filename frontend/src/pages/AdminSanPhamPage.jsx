@@ -5,14 +5,17 @@ import {
     updateSanPham,
     deleteSanPham
 } from "../api/adminSanPhamApi";
+import { getActiveDanhMuc } from "../api/danhMucApi";
 
 function AdminSanPhamPage() {
     const [sanPham, setSanPham] = useState([]);
+    const [danhMuc, setDanhMuc] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [showForm, setShowForm] = useState(false);
 
     const [form, setForm] = useState({
         tenSanPham: "",
+        maDanhMuc: "",
         moTa: "",
         gia: "",
         hinhAnh: "",
@@ -25,8 +28,11 @@ function AdminSanPhamPage() {
     }, []);
 
     const loadData = async () => {
-        const res = await getAllSanPham();
-        setSanPham(res.data);
+        const sp = await getAllSanPham();
+        const dm = await getActiveDanhMuc();
+
+        setSanPham(sp.data);
+        setDanhMuc(dm.data);
     };
 
     const change = (e) => {
@@ -38,7 +44,6 @@ function AdminSanPhamPage() {
 
     const changeImage = (e) => {
         const file = e.target.files[0];
-
         if (!file) return;
 
         if (!file.type.startsWith("image/")) {
@@ -66,12 +71,14 @@ function AdminSanPhamPage() {
     const resetForm = () => {
         setForm({
             tenSanPham: "",
+            maDanhMuc: "",
             moTa: "",
             gia: "",
             hinhAnh: "",
             trangThai: 1,
             soLuongTon: ""
         });
+
         setEditingId(null);
         setShowForm(false);
     };
@@ -79,11 +86,19 @@ function AdminSanPhamPage() {
     const submit = async (e) => {
         e.preventDefault();
 
+        if (!form.maDanhMuc) {
+            alert("Vui lòng chọn danh mục");
+            return;
+        }
+
         const data = {
-            ...form,
+            tenSanPham: form.tenSanPham,
+            moTa: form.moTa,
             gia: Number(form.gia),
+            hinhAnh: form.hinhAnh,
             trangThai: Number(form.trangThai),
-            soLuongTon: Number(form.soLuongTon)
+            soLuongTon: Number(form.soLuongTon),
+            maDanhMuc: Number(form.maDanhMuc)
         };
 
         if (editingId) {
@@ -104,6 +119,7 @@ function AdminSanPhamPage() {
 
         setForm({
             tenSanPham: item.tenSanPham || "",
+            maDanhMuc: item.danhMuc?.maDanhMuc || "",
             moTa: item.moTa || "",
             gia: item.gia || "",
             hinhAnh: item.hinhAnh || "",
@@ -172,6 +188,28 @@ function AdminSanPhamPage() {
                                     />
                                 </div>
 
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">Danh mục</label>
+                                    <select
+                                        className="form-select"
+                                        name="maDanhMuc"
+                                        value={form.maDanhMuc}
+                                        onChange={change}
+                                        required
+                                    >
+                                        <option value="">-- Chọn danh mục --</option>
+
+                                        {danhMuc.map((item) => (
+                                            <option
+                                                key={item.maDanhMuc}
+                                                value={item.maDanhMuc}
+                                            >
+                                                {item.tenDanhMuc}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
                                 <div className="col-md-3 mb-3">
                                     <label className="form-label">Giá</label>
                                     <input
@@ -194,6 +232,19 @@ function AdminSanPhamPage() {
                                         onChange={change}
                                         required
                                     />
+                                </div>
+
+                                <div className="col-md-3 mb-3">
+                                    <label className="form-label">Trạng thái</label>
+                                    <select
+                                        className="form-select"
+                                        name="trangThai"
+                                        value={form.trangThai}
+                                        onChange={change}
+                                    >
+                                        <option value={1}>Hoạt động</option>
+                                        <option value={0}>Ngừng</option>
+                                    </select>
                                 </div>
 
                                 <div className="col-md-8 mb-3">
@@ -236,19 +287,6 @@ function AdminSanPhamPage() {
                                     </div>
                                 </div>
 
-                                <div className="col-md-3 mb-3">
-                                    <label className="form-label">Trạng thái</label>
-                                    <select
-                                        className="form-select"
-                                        name="trangThai"
-                                        value={form.trangThai}
-                                        onChange={change}
-                                    >
-                                        <option value={1}>Hoạt động</option>
-                                        <option value={0}>Ngừng</option>
-                                    </select>
-                                </div>
-
                                 <div className="col-md-12 mb-3">
                                     <label className="form-label">Mô tả</label>
                                     <textarea
@@ -280,7 +318,9 @@ function AdminSanPhamPage() {
             <div className="card border-0 shadow-sm">
                 <div className="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
                     <span>Danh sách sản phẩm</span>
-                    <span className="badge bg-primary">{sanPham.length} sản phẩm</span>
+                    <span className="badge bg-primary">
+                        {sanPham.length} sản phẩm
+                    </span>
                 </div>
 
                 <div className="card-body p-0">
@@ -290,6 +330,7 @@ function AdminSanPhamPage() {
                                 <th>Mã</th>
                                 <th>Ảnh</th>
                                 <th>Tên</th>
+                                <th>Danh mục</th>
                                 <th>Giá</th>
                                 <th>Tồn kho</th>
                                 <th>Trạng thái</th>
@@ -326,7 +367,13 @@ function AdminSanPhamPage() {
                                         {item.tenSanPham}
                                     </td>
 
-                                    <td>{item.gia?.toLocaleString()} VNĐ</td>
+                                    <td>
+                                        {item.danhMuc?.tenDanhMuc || "-"}
+                                    </td>
+
+                                    <td>
+                                        {item.gia?.toLocaleString()} VNĐ
+                                    </td>
 
                                     <td>{item.soLuongTon}</td>
 
@@ -366,7 +413,7 @@ function AdminSanPhamPage() {
 
                             {sanPham.length === 0 && (
                                 <tr>
-                                    <td colSpan="7" className="text-center py-4">
+                                    <td colSpan="8" className="text-center py-4">
                                         Chưa có sản phẩm nào
                                     </td>
                                 </tr>

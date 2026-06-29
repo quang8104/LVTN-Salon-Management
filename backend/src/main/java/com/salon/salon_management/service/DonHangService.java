@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.salon.salon_management.dto.DonHangItemRequest;
+import com.salon.salon_management.dto.NotificationDTO;
 import com.salon.salon_management.dto.TaoDonHangRequest;
 import com.salon.salon_management.entity.ChiTietDonHang;
 import com.salon.salon_management.entity.DonHang;
@@ -15,6 +16,7 @@ import com.salon.salon_management.repository.ChiTietDonHangRepository;
 import com.salon.salon_management.repository.DonHangRepository;
 import com.salon.salon_management.repository.KhachHangRepository;
 import com.salon.salon_management.repository.SanPhamRepository;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 @Service
 public class DonHangService {
@@ -23,16 +25,18 @@ public class DonHangService {
     private final ChiTietDonHangRepository chiTietRepository;
     private final KhachHangRepository khachHangRepository;
     private final SanPhamRepository sanPhamRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public DonHangService(
-            DonHangRepository donHangRepository,
-            ChiTietDonHangRepository chiTietRepository,
-            KhachHangRepository khachHangRepository,
-            SanPhamRepository sanPhamRepository) {
+    
+
+    public DonHangService(DonHangRepository donHangRepository, ChiTietDonHangRepository chiTietRepository,
+            KhachHangRepository khachHangRepository, SanPhamRepository sanPhamRepository,
+            SimpMessagingTemplate messagingTemplate) {
         this.donHangRepository = donHangRepository;
         this.chiTietRepository = chiTietRepository;
         this.khachHangRepository = khachHangRepository;
         this.sanPhamRepository = sanPhamRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public DonHang taoDonHang(TaoDonHangRequest request) {
@@ -52,13 +56,34 @@ public class DonHangService {
         donHang.setSoDienThoai(request.getSoDienThoai());
         donHang.setDiaChi(request.getDiaChi());
         donHang.setGhiChu(request.getGhiChu());
-        donHang.setPhuongThucThanhToan(
-                request.getPhuongThucThanhToan() == null
-                        ? "COD"
-                        : request.getPhuongThucThanhToan()
-        );
+        String pttt = request.getPhuongThucThanhToan() == null
+        ? "COD"
+        : request.getPhuongThucThanhToan();
+
+        donHang.setPhuongThucThanhToan(pttt);
+
+        if ("COD".equals(pttt)) {
+            donHang.setTrangThaiThanhToan(0);
+        } else {
+            donHang.setTrangThaiThanhToan(0);
+        }
 
         donHang = donHangRepository.save(donHang);
+
+        NotificationDTO notification =
+                new NotificationDTO(
+
+                        "ORDER",
+
+                        "Đơn hàng mới",
+
+                        "Khách hàng "
+                                + kh.getHoTen()
+                                + " vừa đặt đơn hàng.");
+
+        messagingTemplate.convertAndSend(
+                "/topic/admin",
+                notification);
 
         double tongTien = 0;
 
@@ -93,6 +118,28 @@ public class DonHangService {
 
         donHang.setTongTien(tongTien);
         return donHangRepository.save(donHang);
+        
+    }
+
+    public DonHang xacNhanThanhToan(Integer id) {
+        DonHang dh = getById(id);
+
+        if (!"BANK_TRANSFER".equals(dh.getPhuongThucThanhToan())) {
+            throw new RuntimeException("Chỉ xác nhận thanh toán cho đơn chuyển khoản");
+        }
+
+        if (dh.getTrangThai() == 4) {
+            throw new RuntimeException("Không thể xác nhận thanh toán đơn đã hủy");
+        }
+
+        if (dh.getTrangThaiThanhToan() != null && dh.getTrangThaiThanhToan() == 1) {
+            throw new RuntimeException("Đơn hàng đã được xác nhận thanh toán");
+        }
+
+        dh.setTrangThaiThanhToan(1);
+        dh.setThoiGianThanhToan(LocalDateTime.now());
+
+        return donHangRepository.save(dh);
     }
 
     public List<DonHang> getAll() {
@@ -119,9 +166,14 @@ public class DonHangService {
             throw new RuntimeException("Chỉ xác nhận đơn hàng đang chờ xác nhận");
         }
 
+        if ("BANK_TRANSFER".equals(dh.getPhuongThucThanhToan())
+                && (dh.getTrangThaiThanhToan() == null || dh.getTrangThaiThanhToan() == 0)) {
+            throw new RuntimeException("Đơn chuyển khoản cần xác nhận thanh toán trước");
+        }
+
         dh.setTrangThai(1);
         return donHangRepository.save(dh);
-    }
+    }                   
 
     public DonHang dangGiao(Integer id) {
         DonHang dh = getById(id);

@@ -1,10 +1,59 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { useEffect, useState } from "react";
+import {connectWebSocket,disconnectWebSocket} from "../websocket/websocket";
+import { getDonHangChoXacNhan } from "../api/adminDonHangApi";
 
 function AdminLayout() {
     const navigate = useNavigate();
 
     const hoTen = localStorage.getItem("hoTen") || "Administrator";
+
+    const [orderPendingCount, setOrderPendingCount] = useState(0);
+
+    useEffect(() => {
+        loadOrderPendingCount();
+
+        connectWebSocket((notification) => {
+            Swal.fire({
+                toast: true,
+                position: "top-end",
+                icon: "info",
+                title: notification.title,
+                text: notification.message,
+                timer: 3500,
+                showConfirmButton: false
+            });
+
+            if (notification.type === "ORDER") {
+                loadOrderPendingCount();
+
+                window.dispatchEvent(
+                    new CustomEvent("adminNotification", {
+                        detail: notification
+                    })
+                );
+            }
+        });
+
+        const handleOrderStatusChanged = () => {
+            loadOrderPendingCount();
+        };
+
+        window.addEventListener(
+            "orderStatusChanged",
+            handleOrderStatusChanged
+        );
+
+        return () => {
+            disconnectWebSocket();
+
+            window.removeEventListener(
+                "orderStatusChanged",
+                handleOrderStatusChanged
+            );
+        };
+    }, []);
 
     const logout = async () => {
 
@@ -34,6 +83,15 @@ function AdminLayout() {
         });
 
         navigate("/login");
+    };
+
+    const loadOrderPendingCount = async () => {
+        try {
+            const res = await getDonHangChoXacNhan();
+            setOrderPendingCount(res.data.length);
+        } catch (error) {
+            console.log(error);
+        }
     };
 
     const menuClass = ({ isActive }) =>
@@ -78,17 +136,37 @@ function AdminLayout() {
                     </li>
 
                     <li>
+                        <NavLink className={menuClass} to="/admin/danh-muc">
+                            📂 Quản lý danh mục
+                        </NavLink>
+                    </li>
+
+                    <li>
                         <NavLink className={menuClass} to="/admin/nhan-vien">
                             👥 Quản lý nhân viên
                         </NavLink>
                     </li>
 
+
                     <li>
-                        <NavLink className={menuClass} to="/admin/hoa-don">
-                            🧾 Quản lý hóa đơn
+                        <NavLink className={menuClass} to="/admin/don-hang">
+                            <span className="position-relative">
+                                🛒 Quản lý đơn hàng
+
+                                {orderPendingCount > 0 && (
+                                    <span
+                                        className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                        style={{ fontSize: "11px" }}
+                                    >
+                                        {orderPendingCount}
+                                    </span>
+                                )}
+                            </span>
                         </NavLink>
                     </li>
+
                 </ul>
+
 
                 <div className="admin-sidebar-footer">
                     <button className="btn btn-outline-light w-100" onClick={logout}>

@@ -1,15 +1,14 @@
 package com.salon.salon_management.entity;
 
-
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
 
 @Entity
 @Table(name = "san_pham")
@@ -36,6 +35,10 @@ public class SanPham {
 
     @Column(name = "so_luong_ton")
     private Integer soLuongTon;
+
+    @ManyToOne
+    @JoinColumn(name = "ma_danh_muc")
+    private DanhMuc danhMuc;
 
     public Integer getMaSanPham() {
         return maSanPham;
@@ -93,5 +96,11 @@ public class SanPham {
         this.soLuongTon = soLuongTon;
     }
 
-    
+    public DanhMuc getDanhMuc() {
+        return danhMuc;
+    }
+
+    public void setDanhMuc(DanhMuc danhMuc) {
+        this.danhMuc = danhMuc;
+    }
 }

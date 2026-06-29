@@ -41,6 +41,28 @@ public class DonHang {
     @Column(name = "dia_chi")
     private String diaChi;
 
+    @Column(name = "trang_thai_thanh_toan")
+    private Integer trangThaiThanhToan;
+
+    @Column(name = "thoi_gian_thanh_toan")
+    private LocalDateTime thoiGianThanhToan;
+
+    public LocalDateTime getThoiGianThanhToan() {
+        return thoiGianThanhToan;
+    }
+
+    public void setThoiGianThanhToan(LocalDateTime thoiGianThanhToan) {
+        this.thoiGianThanhToan = thoiGianThanhToan;
+    }
+
+    public Integer getTrangThaiThanhToan() {
+        return trangThaiThanhToan;
+    }
+
+    public void setTrangThaiThanhToan(Integer trangThaiThanhToan) {
+        this.trangThaiThanhToan = trangThaiThanhToan;
+    }
+
     public Integer getMaDonHang() {
         return maDonHang;
     }

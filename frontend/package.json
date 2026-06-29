@@ -10,12 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@stomp/stompjs": "^7.3.0",
     "axios": "^1.18.1",
     "bootstrap": "^5.3.8",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.0",
     "react-select": "^5.10.2",
+    "sockjs-client": "^1.6.1",
     "sweetalert2": "^11.26.25"
   },
   "devDependencies": {

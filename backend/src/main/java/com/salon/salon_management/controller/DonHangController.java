@@ -68,4 +68,9 @@ public class DonHangController {
     public DonHang huy(@PathVariable Integer id) {
         return service.huy(id);
     }
+
+    @PutMapping("/{id}/xac-nhan-thanh-toan")
+    public DonHang xacNhanThanhToan(@PathVariable Integer id) {
+        return service.xacNhanThanhToan(id);
+    }
 }

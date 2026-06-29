@@ -18,7 +18,6 @@ import AdminLayout from "./layouts/AdminLayout";
 import AdminDichVuPage from "./pages/AdminDichVuPage";
 import AdminSanPhamPage from "./pages/AdminSanPhamPage";
 import AdminNhanVienPage from "./pages/AdminNhanVienPage";
-import AdminHoaDonPage from "./pages/AdminHoaDonPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
@@ -27,6 +26,9 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import BankTransferPage from "./pages/BankTransferPage";
+import AdminDonHangPage from "./pages/AdminDonHangPage";
+import AdminDonHangDetailPage from "./pages/AdminDonHangDetailPage";
+import AdminDanhMucPage from "./pages/AdminDanhMucPage";
 
 function App() {
     return (
@@ -63,7 +65,10 @@ function App() {
                     <Route path="/admin/dich-vu" element={<AdminDichVuPage />} />
                     <Route path="/admin/san-pham" element={<AdminSanPhamPage />} />
                     <Route path="/admin/nhan-vien" element={<AdminNhanVienPage />} />
-                    <Route path="/admin/hoa-don" element={<AdminHoaDonPage />} />
+                    
+                    <Route path="/admin/don-hang" element={<AdminDonHangPage />} />
+                    <Route path="/admin/don-hang/:id" element={<AdminDonHangDetailPage />} />   
+                    <Route path="/admin/danh-muc" element={<AdminDanhMucPage />} />
                 </Route>
 
             </Routes>
