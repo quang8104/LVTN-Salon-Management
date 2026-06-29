@@ -138,6 +138,7 @@ function Navbar() {
                                 </span>
                             )}
                         </Link>
+                    
 
                         <Link
                             to="/lich-su"
@@ -179,6 +180,13 @@ function Navbar() {
                             </Link>
                         </li>
                     }
+
+                    <li> 
+                        <Link className="dropdown-item" to="/don-hang-cua-toi"> 
+                         Đơn hàng của tôi 
+                        </Link> 
+                    </li>
+                    
                     <li>
                         <Link className="dropdown-item" to="/doi-mat-khau">
                             Đổi mật khẩu

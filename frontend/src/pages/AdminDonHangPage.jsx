@@ -10,9 +10,15 @@ function AdminDonHangPage() {
         loadData();
 
         const handleNotification = (event) => {
-            console.log("AdminDonHangPage received:", event.detail);
+            const notification = event.detail;
 
-            if (event.detail?.type === "ORDER") {
+            console.log("AdminDonHangPage received:", notification);
+
+            if (
+                notification?.type === "ORDER" ||
+                notification?.type === "ORDER_UPDATED" ||
+                notification?.type === "ORDER_CANCELLED"
+            ) {
                 loadData();
             }
         };

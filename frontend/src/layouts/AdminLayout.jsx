@@ -25,7 +25,11 @@ function AdminLayout() {
                 showConfirmButton: false
             });
 
-            if (notification.type === "ORDER") {
+            if (
+                notification.type === "ORDER" ||
+                notification.type === "ORDER_UPDATED" ||
+                notification.type === "ORDER_CANCELLED"
+            ) {
                 loadOrderPendingCount();
 
                 window.dispatchEvent(

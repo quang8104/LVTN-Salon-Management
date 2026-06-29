@@ -48,8 +48,7 @@ public class SanPhamController {
 
     @DeleteMapping("/{id}")
     public String delete(@PathVariable Integer id) {
-        service.delete(id);
-        return "Xóa thành công";
+        return service.delete(id);
     }
 
     @GetMapping("/search")

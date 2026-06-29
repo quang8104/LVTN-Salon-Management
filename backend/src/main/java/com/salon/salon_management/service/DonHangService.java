@@ -3,6 +3,7 @@ package com.salon.salon_management.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.salon.salon_management.dto.DonHangItemRequest;
@@ -16,7 +17,6 @@ import com.salon.salon_management.repository.ChiTietDonHangRepository;
 import com.salon.salon_management.repository.DonHangRepository;
 import com.salon.salon_management.repository.KhachHangRepository;
 import com.salon.salon_management.repository.SanPhamRepository;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 @Service
 public class DonHangService {
@@ -27,11 +27,13 @@ public class DonHangService {
     private final SanPhamRepository sanPhamRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
-    
-
-    public DonHangService(DonHangRepository donHangRepository, ChiTietDonHangRepository chiTietRepository,
-            KhachHangRepository khachHangRepository, SanPhamRepository sanPhamRepository,
-            SimpMessagingTemplate messagingTemplate) {
+    public DonHangService(
+            DonHangRepository donHangRepository,
+            ChiTietDonHangRepository chiTietRepository,
+            KhachHangRepository khachHangRepository,
+            SanPhamRepository sanPhamRepository,
+            SimpMessagingTemplate messagingTemplate
+    ) {
         this.donHangRepository = donHangRepository;
         this.chiTietRepository = chiTietRepository;
         this.khachHangRepository = khachHangRepository;
@@ -48,42 +50,25 @@ public class DonHangService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
 
         DonHang donHang = new DonHang();
+
         donHang.setKhachHang(kh);
         donHang.setNgayTao(LocalDateTime.now());
         donHang.setTrangThai(0);
         donHang.setTongTien(0.0);
+
         donHang.setHoTenNguoiNhan(request.getHoTenNguoiNhan());
         donHang.setSoDienThoai(request.getSoDienThoai());
         donHang.setDiaChi(request.getDiaChi());
         donHang.setGhiChu(request.getGhiChu());
-        String pttt = request.getPhuongThucThanhToan() == null
-        ? "COD"
-        : request.getPhuongThucThanhToan();
 
-        donHang.setPhuongThucThanhToan(pttt);
+        String phuongThucThanhToan = request.getPhuongThucThanhToan() == null
+                ? "COD"
+                : request.getPhuongThucThanhToan();
 
-        if ("COD".equals(pttt)) {
-            donHang.setTrangThaiThanhToan(0);
-        } else {
-            donHang.setTrangThaiThanhToan(0);
-        }
+        donHang.setPhuongThucThanhToan(phuongThucThanhToan);
+        donHang.setTrangThaiThanhToan(0);
 
         donHang = donHangRepository.save(donHang);
-
-        NotificationDTO notification =
-                new NotificationDTO(
-
-                        "ORDER",
-
-                        "Đơn hàng mới",
-
-                        "Khách hàng "
-                                + kh.getHoTen()
-                                + " vừa đặt đơn hàng.");
-
-        messagingTemplate.convertAndSend(
-                "/topic/admin",
-                notification);
 
         double tongTien = 0;
 
@@ -96,7 +81,9 @@ public class DonHangService {
             }
 
             if (sp.getSoLuongTon() == null || sp.getSoLuongTon() < item.getSoLuong()) {
-                throw new RuntimeException("Sản phẩm " + sp.getTenSanPham() + " không đủ tồn kho");
+                throw new RuntimeException(
+                        "Sản phẩm " + sp.getTenSanPham() + " không đủ tồn kho"
+                );
             }
 
             double thanhTien = sp.getGia() * item.getSoLuong();
@@ -117,8 +104,16 @@ public class DonHangService {
         }
 
         donHang.setTongTien(tongTien);
-        return donHangRepository.save(donHang);
-        
+
+        DonHang saved = donHangRepository.save(donHang);
+
+        sendOrderNotification(
+                "ORDER",
+                "Đơn hàng mới",
+                "Khách hàng " + kh.getHoTen() + " vừa đặt đơn DH" + saved.getMaDonHang() + "."
+        );
+
+        return saved;
     }
 
     public DonHang xacNhanThanhToan(Integer id) {
@@ -139,7 +134,15 @@ public class DonHangService {
         dh.setTrangThaiThanhToan(1);
         dh.setThoiGianThanhToan(LocalDateTime.now());
 
-        return donHangRepository.save(dh);
+        DonHang saved = donHangRepository.save(dh);
+
+        sendOrderNotification(
+                "ORDER_UPDATED",
+                "Đã xác nhận thanh toán",
+                "Đơn DH" + saved.getMaDonHang() + " đã được xác nhận thanh toán."
+        );
+
+        return saved;
     }
 
     public List<DonHang> getAll() {
@@ -172,8 +175,17 @@ public class DonHangService {
         }
 
         dh.setTrangThai(1);
-        return donHangRepository.save(dh);
-    }                   
+
+        DonHang saved = donHangRepository.save(dh);
+
+        sendOrderNotification(
+                "ORDER_UPDATED",
+                "Đơn hàng đã xác nhận",
+                "Đơn DH" + saved.getMaDonHang() + " đã được xác nhận."
+        );
+
+        return saved;
+    }
 
     public DonHang dangGiao(Integer id) {
         DonHang dh = getById(id);
@@ -183,7 +195,16 @@ public class DonHangService {
         }
 
         dh.setTrangThai(2);
-        return donHangRepository.save(dh);
+
+        DonHang saved = donHangRepository.save(dh);
+
+        sendOrderNotification(
+                "ORDER_UPDATED",
+                "Đơn hàng đang giao",
+                "Đơn DH" + saved.getMaDonHang() + " đang được giao."
+        );
+
+        return saved;
     }
 
     public DonHang hoanThanh(Integer id) {
@@ -194,7 +215,16 @@ public class DonHangService {
         }
 
         dh.setTrangThai(3);
-        return donHangRepository.save(dh);
+
+        DonHang saved = donHangRepository.save(dh);
+
+        sendOrderNotification(
+                "ORDER_UPDATED",
+                "Đơn hàng hoàn thành",
+                "Đơn DH" + saved.getMaDonHang() + " đã hoàn thành."
+        );
+
+        return saved;
     }
 
     public DonHang huy(Integer id) {
@@ -215,10 +245,46 @@ public class DonHangService {
         }
 
         dh.setTrangThai(4);
-        return donHangRepository.save(dh);
+
+        DonHang saved = donHangRepository.save(dh);
+
+        sendOrderNotification(
+                "ORDER_CANCELLED",
+                "Đơn hàng đã hủy",
+                "Đơn DH" + saved.getMaDonHang() + " đã bị hủy."
+        );
+
+        return saved;
     }
 
     public List<DonHang> getChoXacNhan() {
         return donHangRepository.findByTrangThai(0);
+    }
+
+    public void tuDongHuyDonQuaHan() {
+        LocalDateTime time = LocalDateTime.now().minusMinutes(10);
+
+        List<DonHang> list =
+                donHangRepository
+                        .findByPhuongThucThanhToanAndTrangThaiThanhToanAndTrangThaiAndNgayTaoBefore(
+                                "BANK_TRANSFER",
+                                0,
+                                0,
+                                time
+                        );
+
+        for (DonHang dh : list) {
+            huy(dh.getMaDonHang());
+        }
+    }
+
+    private void sendOrderNotification(String type, String title, String message) {
+        NotificationDTO notification = new NotificationDTO(
+                type,
+                title,
+                message
+        );
+
+        messagingTemplate.convertAndSend("/topic/admin", notification);
     }
 }

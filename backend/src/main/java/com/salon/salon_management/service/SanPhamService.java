@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.salon.salon_management.dto.SanPhamRequest;
 import com.salon.salon_management.entity.DanhMuc;
 import com.salon.salon_management.entity.SanPham;
+import com.salon.salon_management.repository.ChiTietDonHangRepository;
 import com.salon.salon_management.repository.DanhMucRepository;
 import com.salon.salon_management.repository.SanPhamRepository;
 
@@ -14,12 +15,15 @@ import com.salon.salon_management.repository.SanPhamRepository;
 public class SanPhamService {
     private final SanPhamRepository repository;
     private final DanhMucRepository danhMucRepository;
+    private final ChiTietDonHangRepository chiTietDonHangRepository;
 
     public SanPhamService(
             SanPhamRepository repository,
-            DanhMucRepository danhMucRepository) {
+            DanhMucRepository danhMucRepository,
+            ChiTietDonHangRepository chiTietDonHangRepository) {
         this.repository = repository;
         this.danhMucRepository = danhMucRepository;
+        this.chiTietDonHangRepository = chiTietDonHangRepository;
     }
 
     public List<SanPham> getAll() {
@@ -32,23 +36,18 @@ public class SanPhamService {
 
     public SanPham getById(Integer id) {
         return repository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException("Không tìm thấy sản phẩm"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
     }
 
     public SanPham create(SanPhamRequest request) {
         SanPham sp = new SanPham();
-
         setData(sp, request);
-
         return repository.save(sp);
     }
 
     public SanPham update(Integer id, SanPhamRequest request) {
         SanPham old = getById(id);
-
         setData(old, request);
-
         return repository.save(old);
     }
 
@@ -82,8 +81,21 @@ public class SanPhamService {
         }
     }
 
-    public void delete(Integer id) {
-        repository.deleteById(id);
+    public String delete(Integer id) {
+        SanPham sp = getById(id);
+
+        boolean daTungNamTrongDonHang =
+                chiTietDonHangRepository.existsBySanPham_MaSanPham(id);
+
+        if (daTungNamTrongDonHang) {
+            sp.setTrangThai(0);
+            repository.save(sp);
+
+            return "Sản phẩm đang nằm trong đơn hàng nên không thể xóa. Hệ thống đã chuyển sản phẩm sang trạng thái ngừng hoạt động.";
+        }
+
+        repository.delete(sp);
+        return "Xóa sản phẩm thành công";
     }
 
     public List<SanPham> search(String keyword) {

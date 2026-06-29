@@ -29,6 +29,8 @@ import BankTransferPage from "./pages/BankTransferPage";
 import AdminDonHangPage from "./pages/AdminDonHangPage";
 import AdminDonHangDetailPage from "./pages/AdminDonHangDetailPage";
 import AdminDanhMucPage from "./pages/AdminDanhMucPage";
+import MyOrderPage from "./pages/MyOrderPage";
+import MyOrderDetailPage from "./pages/MyOrderDetailPage";
 
 function App() {
     return (
@@ -51,6 +53,8 @@ function App() {
                     <Route path="/thong-tin" element={<ProfilePage />} />
                     <Route path="/doi-mat-khau" element={<ChangePasswordPage />} />
                     <Route path="/thanh-toan-ngan-hang/:id" element={<BankTransferPage />} />
+                    <Route path="/don-hang-cua-toi" element={<MyOrderPage />} />
+                    <Route path="/don-hang-cua-toi/:id" element={<MyOrderDetailPage />} />
                 </Route>
 
                 {/* Không dùng layout */}
