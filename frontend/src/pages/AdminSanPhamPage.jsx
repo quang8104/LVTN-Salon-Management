@@ -12,6 +12,7 @@ function AdminSanPhamPage() {
     const [danhMuc, setDanhMuc] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [showForm, setShowForm] = useState(false);
+    const [keyword, setKeyword] = useState("");
 
     const [form, setForm] = useState({
         tenSanPham: "",
@@ -136,19 +137,33 @@ function AdminSanPhamPage() {
     const remove = async (id) => {
         if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
 
-        await deleteSanPham(id);
-        alert("Xóa sản phẩm thành công");
-        loadData();
+        try {
+            const res = await deleteSanPham(id);
+
+            alert(res.data);
+
+            loadData();
+        } catch (error) {
+            console.log(error);
+            alert(error.response?.data || "Xóa sản phẩm thất bại");
+        }
     };
+
+    const filteredSanPham = sanPham.filter((item) => {
+        const text = keyword.toLowerCase();
+
+        return (
+            item.tenSanPham?.toLowerCase().includes(text) ||
+            item.danhMuc?.tenDanhMuc?.toLowerCase().includes(text) ||
+            String(item.maSanPham).includes(text)
+        );
+    });
 
     return (
         <div>
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 className="mb-1">Quản lý sản phẩm</h2>
-                    <p className="text-muted mb-0">
-                        Thêm, cập nhật và quản lý sản phẩm bán tại salon
-                    </p>
                 </div>
 
                 {!showForm && (
@@ -158,7 +173,20 @@ function AdminSanPhamPage() {
                 )}
             </div>
 
+            <div className="card border-0 shadow-sm mb-3">
+                <div className="card-body">
+                    <input
+                        className="form-control"
+                        placeholder="Tìm theo mã, tên sản phẩm hoặc danh mục..."
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                    />
+                </div>
+            </div>
+
             {showForm && (
+
+                
                 <div className="card border-0 shadow-sm mb-4">
                     <div className="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
                         <span>
@@ -339,7 +367,7 @@ function AdminSanPhamPage() {
                         </thead>
 
                         <tbody>
-                            {sanPham.map((item) => (
+                            {filteredSanPham.map((item) => (
                                 <tr key={item.maSanPham}>
                                     <td>{item.maSanPham}</td>
 
@@ -411,7 +439,7 @@ function AdminSanPhamPage() {
                                 </tr>
                             ))}
 
-                            {sanPham.length === 0 && (
+                            {filteredSanPham.length === 0 && (
                                 <tr>
                                     <td colSpan="8" className="text-center py-4">
                                         Chưa có sản phẩm nào

@@ -30,7 +30,7 @@ function ProductCard({ product }) {
                 </p>
 
                 <p className="text-muted small">
-                    Tồn kho: {product.soLuongTon}
+                    Còn: {product.soLuongTon}
                 </p>
 
                 <Link

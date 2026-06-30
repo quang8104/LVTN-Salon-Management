@@ -25,15 +25,7 @@ function ServiceCard({service}){
                     {service.tenDichVu}
 
                 </h5>
-                <span className="badge bg-primary">
-{
-                service.doiTuong===0
-                ? "Nam"
-                : service.doiTuong===1
-                ? "Nữ"
-                : "Unisex"
-                }
-                </span>
+                
 
                 <p className="text-danger fw-bold">
 

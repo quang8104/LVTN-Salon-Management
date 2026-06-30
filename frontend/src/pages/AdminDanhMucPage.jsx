@@ -10,6 +10,7 @@ function AdminDanhMucPage() {
     const [danhMuc, setDanhMuc] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [keyword, setKeyword] = useState("");
 
     const [form, setForm] = useState({
         tenDanhMuc: "",
@@ -85,14 +86,21 @@ function AdminDanhMucPage() {
         }
     };
 
+    const filteredDanhMuc = danhMuc.filter((item) => {
+        const text = keyword.toLowerCase();
+
+        return (
+            String(item.maDanhMuc).includes(text) ||
+            item.tenDanhMuc?.toLowerCase().includes(text) ||
+            item.moTa?.toLowerCase().includes(text)
+        );
+    });
+
     return (
         <div>
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 className="mb-1">Quản lý danh mục</h2>
-                    <p className="text-muted mb-0">
-                        Phân loại sản phẩm bán tại salon.
-                    </p>
                 </div>
 
                 {!showForm && (
@@ -103,6 +111,17 @@ function AdminDanhMucPage() {
                         + Thêm danh mục
                     </button>
                 )}
+            </div>
+
+            <div className="card border-0 shadow-sm mb-3">
+                <div className="card-body">
+                    <input
+                        className="form-control"
+                        placeholder="Tìm theo mã, tên danh mục hoặc mô tả..."
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                    />
+                </div>
             </div>
 
             {showForm && (
@@ -188,7 +207,7 @@ function AdminDanhMucPage() {
                         </thead>
 
                         <tbody>
-                            {danhMuc.map((item) => (
+                            {filteredDanhMuc.map((item) => (
                                 <tr key={item.maDanhMuc}>
                                     <td>{item.maDanhMuc}</td>
                                     <td className="fw-semibold">
@@ -228,7 +247,7 @@ function AdminDanhMucPage() {
                                 </tr>
                             ))}
 
-                            {danhMuc.length === 0 && (
+                            {filteredDanhMuc.length === 0 && (
                                 <tr>
                                     <td colSpan="5" className="text-center py-4">
                                         Chưa có danh mục nào

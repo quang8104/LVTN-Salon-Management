@@ -10,6 +10,9 @@ function ProductPage() {
     const [selectedCategory, setSelectedCategory] = useState("ALL");
     const [keyword, setKeyword] = useState("");
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 8;
+
     useEffect(() => {
         loadData();
     }, []);
@@ -31,46 +34,57 @@ function ProductPage() {
             selectedCategory === "ALL" ||
             product.danhMuc?.maDanhMuc === Number(selectedCategory);
 
-        const matchKeyword =
-            product.tenSanPham
-                ?.toLowerCase()
-                .includes(keyword.toLowerCase());
+        const matchKeyword = product.tenSanPham
+            ?.toLowerCase()
+            .includes(keyword.toLowerCase());
 
         return matchCategory && matchKeyword;
     });
 
+    const totalPages = Math.ceil(filteredProducts.length / pageSize);
+
+    const startIndex = (currentPage - 1) * pageSize;
+
+    const currentProducts = filteredProducts.slice(
+        startIndex,
+        startIndex + pageSize
+    );
+
     return (
         <div className="container py-5">
-            <div className="text-center mb-5">
-                <h2 className="section-title">TẤT CẢ SẢN PHẨM</h2>
-                <p className="text-muted">
-                    Các sản phẩm chăm sóc tóc và tạo kiểu tại salon
-                </p>
-            </div>
-
             <div className="card border-0 shadow-sm mb-4">
                 <div className="card-body">
                     <div className="row g-3 align-items-end">
                         <div className="col-md-5">
-                            <label className="form-label">Tìm kiếm sản phẩm</label>
+                            <label className="form-label">
+                                Tìm kiếm sản phẩm
+                            </label>
                             <input
                                 className="form-control"
                                 placeholder="Nhập tên sản phẩm..."
                                 value={keyword}
-                                onChange={(e) => setKeyword(e.target.value)}
+                                onChange={(e) => {
+                                    setKeyword(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                             />
                         </div>
 
                         <div className="col-md-5">
-                            <label className="form-label">Danh mục</label>
+                            <label className="form-label">
+                                Danh mục
+                            </label>
                             <select
                                 className="form-select"
                                 value={selectedCategory}
-                                onChange={(e) =>
-                                    setSelectedCategory(e.target.value)
-                                }
+                                onChange={(e) => {
+                                    setSelectedCategory(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                             >
-                                <option value="ALL">Tất cả danh mục</option>
+                                <option value="ALL">
+                                    Tất cả danh mục
+                                </option>
 
                                 {categories.map((item) => (
                                     <option
@@ -89,6 +103,7 @@ function ProductPage() {
                                 onClick={() => {
                                     setKeyword("");
                                     setSelectedCategory("ALL");
+                                    setCurrentPage(1);
                                 }}
                             >
                                 Làm mới
@@ -103,7 +118,7 @@ function ProductPage() {
             </div>
 
             <div className="row g-4">
-                {filteredProducts.map((product) => (
+                {currentProducts.map((product) => (
                     <div
                         className="col-lg-3 col-md-6"
                         key={product.maSanPham}
@@ -121,6 +136,66 @@ function ProductPage() {
                     </div>
                 )}
             </div>
+
+            {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-5">
+                    <nav>
+                        <ul className="pagination">
+                            <li
+                                className={`page-item ${
+                                    currentPage === 1 ? "disabled" : ""
+                                }`}
+                            >
+                                <button
+                                    className="page-link"
+                                    onClick={() =>
+                                        setCurrentPage(currentPage - 1)
+                                    }
+                                >
+                                    Trước
+                                </button>
+                            </li>
+
+                            {Array.from({ length: totalPages }, (_, index) => (
+                                <li
+                                    key={index + 1}
+                                    className={`page-item ${
+                                        currentPage === index + 1
+                                            ? "active"
+                                            : ""
+                                    }`}
+                                >
+                                    <button
+                                        className="page-link"
+                                        onClick={() =>
+                                            setCurrentPage(index + 1)
+                                        }
+                                    >
+                                        {index + 1}
+                                    </button>
+                                </li>
+                            ))}
+
+                            <li
+                                className={`page-item ${
+                                    currentPage === totalPages
+                                        ? "disabled"
+                                        : ""
+                                }`}
+                            >
+                                <button
+                                    className="page-link"
+                                    onClick={() =>
+                                        setCurrentPage(currentPage + 1)
+                                    }
+                                >
+                                    Sau
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            )}
         </div>
     );
 }

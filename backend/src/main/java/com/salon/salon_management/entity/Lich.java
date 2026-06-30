@@ -26,11 +26,9 @@ public class Lich {
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="ma_khach_hang",nullable=false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private KhachHang khachHang;
 
-    @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name="ma_nhan_vien",nullable=false)
-    private NhanVien nhanVien;
 
     @Column(name="ngay_hen",nullable=false)
     private LocalDate ngayHen;
@@ -50,8 +48,16 @@ public class Lich {
     @Column(name = "trang_thai")
     private Integer trangThai; // 0: Chờ xác nhận, 1: Xác nhận, 2: Hoàn tất, 3: Hủy
 
-     @Column(name = "thoi_gian_buffer")
+    @Column(name = "thoi_gian_buffer")
     private Integer thoiGianBuffer;
+
+    @Column(name="tong_tien")
+    private Double tongTien;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ma_nhan_vien", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private NhanVien nhanVien;
 
     public Integer getId() {
         return id;
@@ -67,14 +73,6 @@ public class Lich {
 
     public void setKhachHang(KhachHang khachHang) {
         this.khachHang = khachHang;
-    }
-
-    public NhanVien getNhanVien() {
-        return nhanVien;
-    }
-
-    public void setNhanVien(NhanVien nhanVien) {
-        this.nhanVien = nhanVien;
     }
 
     public LocalDate getNgayHen() {
@@ -132,5 +130,26 @@ public class Lich {
     public void setThoiGianBuffer(Integer thoiGianBuffer) {
         this.thoiGianBuffer = thoiGianBuffer;
     }
+
+    public Double getTongTien() {
+        return tongTien;
+    }
+
+    public void setTongTien(Double tongTien) {
+        this.tongTien = tongTien;
+    }
+
+    public NhanVien getNhanVien() {
+        return nhanVien;
+    }
+
+    public void setNhanVien(NhanVien nhanVien) {
+        this.nhanVien = nhanVien;
+    }
+
+    
+    
+
+    
 
 }

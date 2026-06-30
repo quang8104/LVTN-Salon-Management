@@ -4,61 +4,60 @@ import ServiceCard from "../components/ServiceCard";
 
 function ServicePage() {
     const [services, setServices] = useState([]);
-    const [filter, setFilter] = useState(2);
+    const [keyword, setKeyword] = useState("");
 
     useEffect(() => {
         loadData();
     }, []);
 
     const loadData = async () => {
-        const res = await getAllServices();
-        setServices(res.data);
+        try {
+            const res = await getAllServices();
+
+            const activeServices = res.data.filter(
+                (item) => item.trangThai === 1
+            );
+
+            setServices(activeServices);
+        } catch (error) {
+            console.log(error);
+        }
     };
 
-    const filteredServices =
-        filter === 2
-            ? services
-            : services.filter((service) => service.doiTuong === filter);
+    const filteredServices = services.filter((service) => {
+        const text = keyword.trim().toLowerCase();
+
+        if (!text) return true;
+
+        return (
+            service.tenDichVu?.toLowerCase().includes(text) ||
+            service.moTa?.toLowerCase().includes(text) ||
+            String(service.gia).includes(text)
+        );
+    });
 
     return (
         <div className="container py-5">
             <div className="text-center mb-4">
                 <h2 className="mb-3">TẤT CẢ DỊCH VỤ</h2>
+                <p className="text-muted">
+                    Các dịch vụ chăm sóc và tạo kiểu tóc dành cho nam
+                </p>
+            </div>
 
-                <div className="btn-group">
-                    <button
-                        className={
-                            filter === 2
-                                ? "btn btn-dark"
-                                : "btn btn-outline-dark"
-                        }
-                        onClick={() => setFilter(2)}
-                    >
-                        Tất cả
-                    </button>
-
-                    <button
-                        className={
-                            filter === 0
-                                ? "btn btn-dark"
-                                : "btn btn-outline-dark"
-                        }
-                        onClick={() => setFilter(0)}
-                    >
-                        Nam
-                    </button>
-
-                    <button
-                        className={
-                            filter === 1
-                                ? "btn btn-dark"
-                                : "btn btn-outline-dark"
-                        }
-                        onClick={() => setFilter(1)}
-                    >
-                        Nữ
-                    </button>
+            <div className="card border-0 shadow-sm mb-4">
+                <div className="card-body">
+                    <input
+                        className="form-control"
+                        placeholder="Tìm kiếm dịch vụ..."
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                    />
                 </div>
+            </div>
+
+            <div className="mb-3 text-muted">
+                Tìm thấy <b>{filteredServices.length}</b> dịch vụ
             </div>
 
             <div className="row g-4">
@@ -72,7 +71,7 @@ function ServicePage() {
                 ))}
 
                 {filteredServices.length === 0 && (
-                    <div className="col-12 text-center">
+                    <div className="col-12 text-center py-5">
                         <p className="text-muted">
                             Không có dịch vụ phù hợp.
                         </p>

@@ -1,19 +1,9 @@
-import axios from "axios";
+import api from "./axios";
 
-const API = "http://localhost:8080/api/nhanvien";
+export const getAllNhanVien = () => api.get("/nhanvien");
 
-export const getAllNhanVien = () => {
-    return axios.get(API);
-};
+export const createNhanVien = (data) => api.post("/nhanvien", data);
 
-export const createNhanVien = (data) => {
-    return axios.post(API, data);
-};
+export const updateNhanVien = (id, data) => api.put(`/nhanvien/${id}`, data);
 
-export const updateNhanVien = (id, data) => {
-    return axios.put(`${API}/${id}`, data);
-};
-
-export const deleteNhanVien = (id) => {
-    return axios.delete(`${API}/${id}`);
-};
+export const deleteNhanVien = (id) => api.delete(`/nhanvien/${id}`);

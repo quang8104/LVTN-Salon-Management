@@ -1,54 +1,50 @@
 package com.salon.salon_management.entity;
 
-import java.math.BigDecimal;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "chi_tiet_lich_hen")
+@IdClass(ChiTietLichHenId.class)
 public class ChiTietLichHen {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ma_chi_tiet_lich_hen")
-    private Integer maChiTietLichHen;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ma_lich_hen")
-    @JsonIgnore
-    private Lich lichHen;
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Lich lich;
 
-    @ManyToOne
+    @Id
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ma_dich_vu")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private DichVu dichVu;
 
+    @Column(name = "don_gia")
     private Double donGia;
 
+    @Column(name = "thoi_gian")
     private Integer thoiGian;
 
-    public Integer getMaChiTietLichHen() {
-        return maChiTietLichHen;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ma_nhan_vien")
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
+    private NhanVien nhanVien;
+
+    public Lich getLich() {
+        return lich;
     }
 
-    public void setMaChiTietLichHen(Integer maChiTietLichHen) {
-        this.maChiTietLichHen = maChiTietLichHen;
-    }
-
-    public Lich getLichHen() {
-        return lichHen;
-    }
-
-    public void setLichHen(Lich lichHen) {
-        this.lichHen = lichHen;
+    public void setLich(Lich lich) {
+        this.lich = lich;
     }
 
     public DichVu getDichVu() {
@@ -73,6 +69,14 @@ public class ChiTietLichHen {
 
     public void setThoiGian(Integer thoiGian) {
         this.thoiGian = thoiGian;
+    }
+
+    public NhanVien getNhanVien() {
+        return nhanVien;
+    }
+
+    public void setNhanVien(NhanVien nhanVien) {
+        this.nhanVien = nhanVien;
     }
 
     

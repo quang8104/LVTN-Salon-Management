@@ -5,6 +5,7 @@ import { getAllDonHang } from "../api/adminDonHangApi";
 function AdminDonHangPage() {
     const [donHang, setDonHang] = useState([]);
     const [filter, setFilter] = useState("ALL");
+    const [keyword, setKeyword] = useState("");
 
     useEffect(() => {
         loadData();
@@ -93,20 +94,40 @@ function AdminDonHangPage() {
             : "badge bg-primary";
     };
 
-    const filteredDonHang =
-        filter === "ALL"
-            ? donHang
-            : donHang.filter((item) => item.trangThai === Number(filter));
+    const filteredDonHang = donHang.filter((item) => {
+        const matchStatus =
+            filter === "ALL" || item.trangThai === Number(filter);
+
+        const text = keyword.trim().toLowerCase();
+
+        if (!text) return matchStatus;
+
+        const maDonHangText = `DH${item.maDonHang}`.toLowerCase();
+
+        const matchKeyword =
+            maDonHangText.includes(text) ||
+            String(item.maDonHang).includes(text) ||
+            item.hoTenNguoiNhan?.toLowerCase().includes(text) ||
+            item.khachHang?.hoTen?.toLowerCase().includes(text) ||
+            item.soDienThoai?.includes(text);
+
+        return matchStatus && matchKeyword;
+    });
 
     return (
         <div>
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 className="mb-1">Quản lý đơn hàng</h2>
-                    <p className="text-muted mb-0">
-                        Theo dõi, xác nhận thanh toán và xử lý đơn hàng.
-                    </p>
                 </div>
+
+                <input
+                    className="form-control"
+                    style={{ width: "320px" }}
+                    placeholder="Tìm mã đơn, tên khách, SĐT..."
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                />
 
                 <select
                     className="form-select"
@@ -122,7 +143,7 @@ function AdminDonHangPage() {
                     <option value="4">Đã hủy</option>
                 </select>
             </div>
-
+            
             <div className="card border-0 shadow-sm">
                 <div className="card-header bg-white fw-bold">
                     Danh sách đơn hàng

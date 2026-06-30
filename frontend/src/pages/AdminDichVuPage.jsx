@@ -18,7 +18,6 @@ function AdminDichVuPage() {
         thoiGianThucHien: "",
         anhGioiThieu: "",
         trangThai: 1,
-        doiTuong: 2
     });
 
     useEffect(() => {
@@ -67,7 +66,6 @@ function AdminDichVuPage() {
             thoiGianThucHien: "",
             anhGioiThieu: "",
             trangThai: 1,
-            doiTuong: 2
         });
         setEditingId(null);
         setShowForm(false);
@@ -86,7 +84,6 @@ function AdminDichVuPage() {
             gia: Number(form.gia),
             thoiGianThucHien: Number(form.thoiGianThucHien),
             trangThai: Number(form.trangThai),
-            doiTuong:Number(form.doiTuong)
         };
 
         if (editingId) {
@@ -112,7 +109,6 @@ function AdminDichVuPage() {
             thoiGianThucHien: item.thoiGianThucHien || "",
             anhGioiThieu: item.anhGioiThieu || "",
             trangThai: item.trangThai ?? 1,
-            doiTuong:item.doiTuong ?? 2
         });
 
         window.scrollTo({
@@ -209,33 +205,13 @@ function AdminDichVuPage() {
                                         className="form-control"
                                         onChange={changeImage}
                                     />
-
                                     <small className="text-muted">
                                         Chọn ảnh từ máy tính. Nên dùng ảnh nhỏ để tránh dữ liệu quá nặng.
                                     </small>
                                 </div>
 
-                                <div className="col-md-3 mb-3">
-                                <label>Đối tượng</label>
-
-                                <select
-                                className="form-select"
-                                name="doiTuong"
-                                value={form.doiTuong}
-                                onChange={change}
-                                >
-
-                                <option value={0}>Nam</option>
-                                <option value={1}>Nữ</option>
-                                <option value={2}>Unisex</option>
-
-                                </select>
-
-                                </div>
-
                                 <div className="col-md-4 mb-3">
                                     <label className="form-label">Xem trước</label>
-
                                     <div
                                         className="border rounded d-flex align-items-center justify-content-center bg-light"
                                         style={{ height: "170px" }}

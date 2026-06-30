@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API = "http://localhost:8080/api/lich";
+const API = "http://localhost:8080/api/lich-hen";
 
 export const getAllLich = () => {
     return axios.get(API);
@@ -16,4 +16,12 @@ export const hoanTatLich = (id) => {
 
 export const huyLich = (id) => {
     return axios.put(`${API}/${id}/huy`);
+};
+
+export const getChiTietLich = (id) => {
+    return axios.get(`${API}/${id}/chi-tiet`);
+};
+
+export const batDauLich = (id) => {
+    return axios.put(`${API}/${id}/bat-dau`);
 };

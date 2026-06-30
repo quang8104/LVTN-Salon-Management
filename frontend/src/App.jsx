@@ -43,7 +43,7 @@ function App() {
                     <Route path="/san-pham" element={<ProductPage />} />
                     <Route path="/dichvu" element={<ServicePage />} />
                     <Route path="/dichvu/:id"element={<ServiceDetailPage />}/>
-                    <Route path="/lich/dat-lich" element={<BookingPage />} />
+                    <Route path="/dat-lich" element={<BookingPage />} />
                     <Route path="/lich-su" element={<HistoryPage />} />
                     <Route path="/lich-su/:id" element={<HistoryDetailPage />} />
                     <Route path="/san-pham/:id" element={<ProductDetailPage />} />

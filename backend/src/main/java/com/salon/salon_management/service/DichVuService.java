@@ -38,7 +38,6 @@ public class DichVuService {
         dv.setThoiGianThucHien(data.getThoiGianThucHien());
         dv.setAnhGioiThieu(data.getAnhGioiThieu());
         dv.setTrangThai(data.getTrangThai());
-        dv.setDoiTuong(data.getDoiTuong());
 
         return repository.save(dv);
     }

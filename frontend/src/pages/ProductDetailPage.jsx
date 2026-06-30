@@ -108,7 +108,7 @@ function ProductDetailPage() {
                     </h3>
 
                     <p className="mb-2">
-                        <strong>Tồn kho:</strong>{" "}
+                        <strong>Còn:</strong>{" "}
                         {product.soLuongTon > 0
                             ? product.soLuongTon
                             : "Hết hàng"}

@@ -1,8 +1,5 @@
-import axios from "axios";
-import { useSelectedService } from "../context/SelectedServiceContext";
+import api from "./axios";
 
-const API = "http://localhost:8080/api/lich";
-
-export const datLich = (data) => {
-    return axios.post(`${API}/dat-lich`, data);
+export const filterBooking = (data) => {
+    return api.post("/booking/filter", data);
 };

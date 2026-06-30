@@ -1,72 +1,126 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-import { getAllNhanVien } from "../api/nhanVienApi";
-import { getSlotRanh } from "../api/lichApi";
-import { datLich } from "../api/bookingApi";
-
-import { useSelectedService } from "../context/SelectedServiceContext";
+import { getAllServices } from "../api/dichVuApi";
+import { taoLich } from "../api/lichHenApi";
+import { filterBooking } from "../api/bookingApi";
 
 function BookingPage() {
-    const navigate = useNavigate();
+    const userId = localStorage.getItem("userId");
 
-    const {
-        selectedServices,
-        clearServices
-    } = useSelectedService();
-
-    const [nhanViens, setNhanViens] = useState([]);
+    const [services, setServices] = useState([]);
+    const [selectedServices, setSelectedServices] = useState([]);
+    const [employees, setEmployees] = useState([]);
     const [slots, setSlots] = useState([]);
+
     const [form, setForm] = useState({
         maNhanVien: "",
         ngayHen: "",
         gioHen: ""
     });
 
-    // 1. Load danh sách nhân viên khi component mount
     useEffect(() => {
-        loadNhanVien();
+        loadServices();
     }, []);
 
-    // 2. Tự động load slot trống khi chọn đủ nhân viên và ngày hẹn
     useEffect(() => {
-        if (form.maNhanVien && form.ngayHen) {
-            loadSlot();
-        }
-    }, [form.maNhanVien, form.ngayHen]);
+        syncBooking();
+    }, [selectedServices, form.maNhanVien, form.ngayHen]);
 
-    // Tính toán tổng tiền và tổng thời gian
-    const tongTien = selectedServices.reduce(
-        (sum, item) => sum + item.gia,
-        0
-    );
-
-    const tongThoiGian = selectedServices.reduce(
-        (sum, item) => sum + item.thoiGianThucHien,
-        0
-    );
-
-    // Hàm gọi API lấy danh sách nhân viên
-    const loadNhanVien = async () => {
+    const loadServices = async () => {
         try {
-            const res = await getAllNhanVien();
-            setNhanViens(res.data);
-        } catch (err) {
-            console.log(err);
+            const res = await getAllServices();
+            setServices(res.data.filter((item) => item.trangThai === 1));
+        } catch (error) {
+            console.log(error);
         }
     };
 
-    // Hàm gọi API lấy danh sách slot giờ trống
-    const loadSlot = async () => {
+    const syncBooking = async () => {
+        if (selectedServices.length === 0) {
+            setEmployees([]);
+            setSlots([]);
+            setForm((prev) => ({
+                ...prev,
+                maNhanVien: "",
+                gioHen: ""
+            }));
+            return;
+        }
+
         try {
-            const res = await getSlotRanh(form.maNhanVien, form.ngayHen);
-            setSlots(res.data.data);
-        } catch (err) {
-            console.log(err);
+            const res = await filterBooking({
+                selectedServices: selectedServices.map((item) => item.maDichVu),
+                employeeId: form.maNhanVien ? Number(form.maNhanVien) : null,
+                date: form.ngayHen || null
+            });
+
+            setEmployees(res.data.employees || []);
+            setSlots(res.data.availableSlots || res.data.availableTimeSlots || []);
+
+            if (
+                form.maNhanVien &&
+                !(res.data.employees || []).some(
+                    (nv) => nv.maNhanVien === Number(form.maNhanVien)
+                )
+            ) {
+                setForm((prev) => ({
+                    ...prev,
+                    maNhanVien: "",
+                    gioHen: ""
+                }));
+            }
+        } catch (error) {
+            console.log(error);
         }
     };
 
-    // Xử lý thay đổi dữ liệu trong Form
+    const addService = async (service) => {
+        const existed = selectedServices.some(
+            (item) => item.maDichVu === service.maDichVu
+        );
+
+        if (existed) {
+            alert("Dịch vụ này đã được chọn");
+            return;
+        }
+
+        const newSelected = [...selectedServices, service];
+
+        try {
+            const res = await filterBooking({
+                selectedServices: newSelected.map((item) => item.maDichVu),
+                employeeId: null,
+                date: null
+            });
+
+            if (!res.data.employees || res.data.employees.length === 0) {
+                alert("Không có nhân viên nào thực hiện được toàn bộ các dịch vụ đã chọn");
+                return;
+            }
+
+            setSelectedServices(newSelected);
+            setForm({
+                maNhanVien: "",
+                ngayHen: "",
+                gioHen: ""
+            });
+        } catch (error) {
+            console.log(error);
+            alert("Không thể kiểm tra dịch vụ");
+        }
+    };
+
+    const removeService = (id) => {
+        setSelectedServices(
+            selectedServices.filter((item) => item.maDichVu !== id)
+        );
+
+        setForm({
+            maNhanVien: "",
+            ngayHen: "",
+            gioHen: ""
+        });
+    };
+
     const change = (e) => {
         setForm({
             ...form,
@@ -74,83 +128,199 @@ function BookingPage() {
         });
     };
 
-    // Xử lý gửi dữ liệu đặt lịch
+    const totalMoney = selectedServices.reduce(
+        (sum, item) => sum + Number(item.gia || 0),
+        0
+    );
+
+    const totalTime = selectedServices.reduce(
+        (sum, item) => sum + Number(item.thoiGianThucHien || 0),
+        0
+    );
+
     const submit = async (e) => {
         e.preventDefault();
 
+        if (!userId) {
+            alert("Vui lòng đăng nhập để đặt lịch");
+            return;
+        }
+
         if (selectedServices.length === 0) {
-            alert("Bạn chưa chọn dịch vụ.");
+            alert("Vui lòng chọn ít nhất một dịch vụ");
+            return;
+        }
+
+        if (!form.maNhanVien || !form.ngayHen || !form.gioHen) {
+            alert("Vui lòng chọn nhân viên, ngày và giờ hẹn");
             return;
         }
 
         try {
-            const request = {
-                maKhachHang: 1, // Đang để cứng để test
+            await taoLich({
+                maKhachHang: Number(userId),
                 maNhanVien: Number(form.maNhanVien),
                 ngayHen: form.ngayHen,
                 gioHen: form.gioHen,
-                ghiChu: "",
-                danhSachDichVu: selectedServices.map(item => item.maDichVu)
-            };
+                danhSachDichVu: selectedServices.map((item) => item.maDichVu)
+            });
 
-            console.log(request);
-            const res = await datLich(request);
-            console.log(res.data);
+            alert("Đặt lịch thành công. Lịch hẹn đang chờ admin xác nhận.");
 
-            alert("Đặt lịch thành công!");
-            clearServices();
-            navigate("/");
-        } catch (err) {
-            console.log(err);
-            alert("Đặt lịch thất bại!");
+            setSelectedServices([]);
+            setEmployees([]);
+            setSlots([]);
+            setForm({
+                maNhanVien: "",
+                ngayHen: "",
+                gioHen: ""
+            });
+        } catch (error) {
+            console.log(error);
+            alert(error.response?.data || "Đặt lịch thất bại");
         }
     };
 
     return (
         <div className="container py-5">
-            <h2 className="mb-4">Đặt lịch</h2>
-            
-            <div className="row">
-                {/* CỘT TRÁI: DANH SÁCH DỊCH VỤ ĐÃ CHỌN */}
-                <div className="col-md-5">
-                    <div className="card shadow-sm">
-                        <div className="card-header bg-primary text-white">
-                            <h5 className="mb-0">Dịch vụ đã chọn</h5>
-                        </div>
-                        <div className="card-body">
-                            {selectedServices.length === 0 ? (
-                                <p className="text-muted">Chưa có dịch vụ nào.</p>
-                            ) : (
-                                selectedServices.map(item => (
-                                    <div key={item.maDichVu} className="border-bottom py-2">
-                                        <div className="fw-bold">{item.tenDichVu}</div>
-                                        <small>{item.thoiGianThucHien} phút</small>
-                                        <br />
-                                        <span className="text-danger">
-                                            {item.gia.toLocaleString()} VNĐ
-                                        </span>
+            <div className="text-center mb-5">
+                <h2>ĐẶT LỊCH CẮT TÓC</h2>
+                <p className="text-muted">
+                    Chọn nhiều dịch vụ, sau đó chọn nhân viên và khung giờ phù hợp.
+                </p>
+            </div>
+
+            <div className="row g-4">
+                <div className="col-lg-8">
+                    <h4 className="mb-3">Chọn dịch vụ</h4>
+
+                    <div className="row g-4">
+                        {services.map((service) => {
+                            const selected = selectedServices.some(
+                                (item) => item.maDichVu === service.maDichVu
+                            );
+
+                            return (
+                                <div className="col-md-4" key={service.maDichVu}>
+                                    <div className="card border-0 shadow-sm h-100">
+                                        {service.anhGioiThieu && (
+                                            <img
+                                                src={service.anhGioiThieu}
+                                                alt={service.tenDichVu}
+                                                style={{
+                                                    height: "170px",
+                                                    objectFit: "cover"
+                                                }}
+                                            />
+                                        )}
+
+                                        <div className="card-body">
+                                            <h6 className="fw-bold">
+                                                {service.tenDichVu}
+                                            </h6>
+
+                                            <p className="text-muted mb-1">
+                                                {service.thoiGianThucHien} phút
+                                            </p>
+
+                                            <p className="text-danger fw-bold">
+                                                {Number(service.gia).toLocaleString()} VNĐ
+                                            </p>
+
+                                            <button
+                                                className={
+                                                    selected
+                                                        ? "btn btn-secondary w-100"
+                                                        : "btn btn-dark w-100"
+                                                }
+                                                disabled={selected}
+                                                onClick={() => addService(service)}
+                                            >
+                                                {selected ? "Đã chọn" : "+ Thêm"}
+                                            </button>
+                                        </div>
                                     </div>
-                                ))
-                            )}
-                            
-                            <hr />
-                            <h6>Tổng thời gian: {tongThoiGian} phút</h6>
-                            <h5 className="text-danger">
-                                Tổng tiền: {tongTien.toLocaleString()} VNĐ
-                            </h5>
-                        </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
-                {/* CỘT PHẢI: FORM THÔNG TIN ĐẶT LỊCH */}
-                <div className="col-md-7">
-                    <div className="card shadow-sm">
-                        <div className="card-header bg-success text-white">
-                            <h5 className="mb-0">Thông tin đặt lịch</h5>
+                <div className="col-lg-4">
+                    <div className="card border-0 shadow-sm sticky-top">
+                        <div className="card-header bg-white fw-bold">
+                            Thông tin đặt lịch
                         </div>
+
                         <div className="card-body">
+                            <h6>Dịch vụ đã chọn</h6>
+
+                            {selectedServices.length === 0 && (
+                                <p className="text-muted">Chưa chọn dịch vụ</p>
+                            )}
+
+                            {selectedServices.map((item) => (
+                                <div
+                                    key={item.maDichVu}
+                                    className="d-flex justify-content-between align-items-center border-bottom py-2"
+                                >
+                                    <div>
+                                        <div className="fw-semibold">
+                                            {item.tenDichVu}
+                                        </div>
+                                        <small>
+                                            {item.thoiGianThucHien} phút -{" "}
+                                            {Number(item.gia).toLocaleString()} VNĐ
+                                        </small>
+                                    </div>
+
+                                    <button
+                                        className="btn btn-sm btn-outline-danger"
+                                        onClick={() => removeService(item.maDichVu)}
+                                    >
+                                        X
+                                    </button>
+                                </div>
+                            ))}
+
+                            <div className="mt-3">
+                                <p className="mb-1">
+                                    <b>Tổng thời gian:</b> {totalTime} phút
+                                </p>
+                                <p>
+                                    <b>Tổng tiền:</b>{" "}
+                                    <span className="text-danger fw-bold">
+                                        {totalMoney.toLocaleString()} VNĐ
+                                    </span>
+                                </p>
+                            </div>
+
                             <form onSubmit={submit}>
-                                {/* Chọn Ngày Hẹn */}
+                                <div className="mb-3">
+                                    <label className="form-label">Nhân viên phù hợp</label>
+                                    <select
+                                        className="form-select"
+                                        name="maNhanVien"
+                                        value={form.maNhanVien}
+                                        onChange={change}
+                                        disabled={selectedServices.length === 0}
+                                        required
+                                    >
+                                        <option value="">
+                                            -- Chọn nhân viên --
+                                        </option>
+
+                                        {employees.map((nv) => (
+                                            <option
+                                                key={nv.maNhanVien}
+                                                value={nv.maNhanVien}
+                                            >
+                                                {nv.hoTen}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
                                 <div className="mb-3">
                                     <label className="form-label">Ngày hẹn</label>
                                     <input
@@ -159,47 +329,40 @@ function BookingPage() {
                                         name="ngayHen"
                                         value={form.ngayHen}
                                         onChange={change}
+                                        min={new Date().toISOString().split("T")[0]}
+                                        required
                                     />
                                 </div>
 
-                                {/* Chọn Nhân Viên */}
                                 <div className="mb-3">
-                                    <label className="form-label">Nhân viên</label>
-                                    <select
-                                        className="form-select"
-                                        name="maNhanVien"
-                                        value={form.maNhanVien}
-                                        onChange={change}
-                                    >
-                                        <option value="">Chọn nhân viên</option>
-                                        {nhanViens.map(nv => (
-                                            <option key={nv.maNhanVien} value={nv.maNhanVien}>
-                                                {nv.hoTen}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Chọn Giờ Hẹn */}
-                                <div className="mb-4">
-                                    <label className="form-label">Giờ hẹn</label>
+                                    <label className="form-label">Giờ trống</label>
                                     <select
                                         className="form-select"
                                         name="gioHen"
                                         value={form.gioHen}
                                         onChange={change}
-                                        disabled={!form.ngayHen || !form.maNhanVien}
+                                        disabled={!form.maNhanVien || !form.ngayHen}
+                                        required
                                     >
-                                        <option value="">Chọn giờ</option>
-                                        {slots.map(slot => (
-                                            <option key={slot} value={slot}>
-                                                {slot}
+                                        <option value="">
+                                            -- Chọn giờ --
+                                        </option>
+
+                                        {slots.map((slot, index) => (
+                                            <option key={index} value={slot.start}>
+                                                {slot.start} - {slot.end}
                                             </option>
                                         ))}
                                     </select>
+
+                                    {form.maNhanVien && form.ngayHen && slots.length === 0 && (
+                                        <small className="text-danger">
+                                            Không còn khung giờ phù hợp trong ngày này.
+                                        </small>
+                                    )}
                                 </div>
 
-                                <button type="submit" className="btn btn-success">
+                                <button className="btn btn-dark w-100">
                                     Xác nhận đặt lịch
                                 </button>
                             </form>
