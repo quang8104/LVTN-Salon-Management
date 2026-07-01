@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.*;
 
+import com.salon.salon_management.dto.AdminTaoLichRequest;
 import com.salon.salon_management.dto.LichHenReasonRequest;
 import com.salon.salon_management.dto.SuaLichAdminRequest;
 import com.salon.salon_management.dto.TaoLichRequest;
@@ -11,6 +12,7 @@ import com.salon.salon_management.entity.ChiTietLichHen;
 import com.salon.salon_management.entity.Lich;
 import com.salon.salon_management.entity.LichSuLichHen;
 import com.salon.salon_management.service.LichService;
+import com.salon.salon_management.dto.AdminTaoLichRequest;
 
 @RestController
 @RequestMapping("/api/lich-hen")
@@ -91,6 +93,11 @@ public class LichController {
             @RequestBody SuaLichAdminRequest request
     ) {
         return service.suaLichAdmin(id, request);
+    }
+
+    @PostMapping("/admin-tao")
+    public Lich adminTaoLich(@RequestBody AdminTaoLichRequest request) {
+        return service.adminTaoLich(request);
     }
 }
 

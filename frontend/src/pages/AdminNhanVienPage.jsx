@@ -86,7 +86,7 @@ function AdminNhanVienPage() {
 
         const data = {
             ...form,
-            trangThai: Number(form.trangThai)
+            trangThai: editingId ? form.trangThai : 1
         };
 
         if (editingId) {
@@ -200,18 +200,7 @@ function AdminNhanVienPage() {
                                     />
                                 </div>
 
-                                <div className="col-md-3 mb-3">
-                                    <label>Trạng thái</label>
-                                    <select
-                                        className="form-select"
-                                        name="trangThai"
-                                        value={form.trangThai}
-                                        onChange={change}
-                                    >
-                                        <option value={1}>Đang làm</option>
-                                        <option value={0}>Nghỉ</option>
-                                    </select>
-                                </div>
+                                
 
                                 <div className="col-md-3 mb-3">
                                     <label>Vai trò</label>

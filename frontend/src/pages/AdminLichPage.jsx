@@ -5,23 +5,39 @@ import {
     getLichSuLich,
     xacNhanLich,
     huyLichAdmin,
-    suaLichAdmin
+    suaLichAdmin,
+    adminTaoLich
 } from "../api/adminLichApi";
 import { getAllNhanVien } from "../api/adminNhanVienApi";
 import { getAllDichVu } from "../api/adminDichVuApi";
+import { filterBooking } from "../api/bookingApi";
 
 function AdminLichPage() {
     const [lichHen, setLichHen] = useState([]);
     const [keyword, setKeyword] = useState("");
+    const [statusFilter, setStatusFilter] = useState("ALL");
 
     const [selectedLich, setSelectedLich] = useState(null);
     const [lichSu, setLichSu] = useState([]);
-    const [showDetail, setShowDetail] = useState(false);
 
+    const [showDetail, setShowDetail] = useState(false);
     const [showEdit, setShowEdit] = useState(false);
+    const [showCreate, setShowCreate] = useState(false);
+
     const [nhanVienList, setNhanVienList] = useState([]);
     const [dichVuList, setDichVuList] = useState([]);
-    const [statusFilter, setStatusFilter] = useState("ALL");
+
+    const [createSlots, setCreateSlots] = useState([]);
+    const [serviceKeyword, setServiceKeyword] = useState("");
+
+    const today = new Date();
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + 7);
+
+    const formatDate = (date) => date.toISOString().split("T")[0];
+
+    const minBookingDate = formatDate(today);
+    const maxBookingDate = formatDate(maxDate);
 
     const [editForm, setEditForm] = useState({
         id: null,
@@ -32,10 +48,35 @@ function AdminLichPage() {
         lyDo: ""
     });
 
+    const [createForm, setCreateForm] = useState({
+        tenKhach: "",
+        sdtKhach: "",
+        maNhanVien: "",
+        ngayHen: "",
+        gioHen: "",
+        danhSachDichVu: [],
+        ghiChu: ""
+    });
+
     useEffect(() => {
         loadData();
         loadFormData();
     }, []);
+
+    const resetCreateForm = () => {
+        setCreateForm({
+            tenKhach: "",
+            sdtKhach: "",
+            maNhanVien: "",
+            ngayHen: "",
+            gioHen: "",
+            danhSachDichVu: [],
+            ghiChu: ""
+        });
+
+        setCreateSlots([]);
+        setServiceKeyword("");
+    };
 
     const loadData = async () => {
         const res = await getAllLich();
@@ -51,6 +92,7 @@ function AdminLichPage() {
             })
         );
 
+        dataWithChiTiet.sort((a, b) => b.id - a.id);
         setLichHen(dataWithChiTiet);
     };
 
@@ -58,8 +100,14 @@ function AdminLichPage() {
         const nvRes = await getAllNhanVien();
         const dvRes = await getAllDichVu();
 
-        setNhanVienList(Array.isArray(nvRes.data) ? nvRes.data : nvRes.data.data || []);
-        setDichVuList(Array.isArray(dvRes.data) ? dvRes.data : dvRes.data.data || []);
+        const nvList = Array.isArray(nvRes.data) ? nvRes.data : nvRes.data.data || [];
+        const dvList = Array.isArray(dvRes.data) ? dvRes.data : dvRes.data.data || [];
+
+        setNhanVienList(
+            nvList.filter((nv) => nv.trangThai === 1 && nv.vaiTro === "NHAN_VIEN")
+        );
+
+        setDichVuList(dvList.filter((dv) => dv.trangThai === 1));
     };
 
     const trangThaiText = (value) => {
@@ -92,10 +140,47 @@ function AdminLichPage() {
             item.ngayHen?.toLowerCase().includes(text) ||
             item.gioHen?.toLowerCase().includes(text) ||
             trangThaiText(item.trangThai).toLowerCase().includes(text) ||
+            item.nguonDat?.toLowerCase().includes(text) ||
+            item.ghiChu?.toLowerCase().includes(text) ||
             dichVuText?.includes(text);
 
         return matchStatus && matchKeyword;
     });
+
+    const loadCreateSlots = async (nextForm = createForm) => {
+        if (
+            !nextForm.ngayHen ||
+            !nextForm.maNhanVien ||
+            nextForm.danhSachDichVu.length === 0
+        ) {
+            setCreateSlots([]);
+            return;
+        }
+
+        try {
+            const res = await filterBooking({
+                selectedServices: nextForm.danhSachDichVu,
+                employeeId: Number(nextForm.maNhanVien),
+                date: nextForm.ngayHen
+            });
+
+            const slots = res.data.availableSlots || [];
+            setCreateSlots(slots);
+
+            if (
+                nextForm.gioHen &&
+                !slots.some((slot) => slot.start === nextForm.gioHen)
+            ) {
+                setCreateForm((prev) => ({
+                    ...prev,
+                    gioHen: ""
+                }));
+            }
+        } catch (error) {
+            console.log(error);
+            setCreateSlots([]);
+        }
+    };
 
     const handleXacNhan = async (id) => {
         await xacNhanLich(id);
@@ -139,6 +224,7 @@ function AdminLichPage() {
             lyDo: ""
         });
 
+        setServiceKeyword("");
         setShowEdit(true);
     };
 
@@ -151,6 +237,21 @@ function AdminLichPage() {
                 ? editForm.danhSachDichVu.filter((id) => id !== maDichVu)
                 : [...editForm.danhSachDichVu, maDichVu]
         });
+    };
+
+    const toggleDichVuCreate = (maDichVu) => {
+        const exists = createForm.danhSachDichVu.includes(maDichVu);
+
+        const nextForm = {
+            ...createForm,
+            gioHen: "",
+            danhSachDichVu: exists
+                ? createForm.danhSachDichVu.filter((id) => id !== maDichVu)
+                : [...createForm.danhSachDichVu, maDichVu]
+        };
+
+        setCreateForm(nextForm);
+        loadCreateSlots(nextForm);
     };
 
     const handleSuaLich = async (e) => {
@@ -181,9 +282,96 @@ function AdminLichPage() {
         loadData();
     };
 
+    const handleAdminTaoLich = async (e) => {
+        e.preventDefault();
+
+        if (!createForm.tenKhach.trim()) {
+            alert("Vui lòng nhập tên khách hàng");
+            return;
+        }
+
+        if (!createForm.sdtKhach.trim()) {
+            alert("Vui lòng nhập số điện thoại khách hàng");
+            return;
+        }
+
+        if (!createForm.maNhanVien) {
+            alert("Vui lòng chọn nhân viên");
+            return;
+        }
+
+        if (!createForm.ngayHen || !createForm.gioHen) {
+            alert("Vui lòng chọn ngày và giờ hẹn");
+            return;
+        }
+
+        if (createForm.ngayHen < minBookingDate) {
+            alert("Không được đặt lịch trong quá khứ");
+            return;
+        }
+
+        if (createForm.ngayHen > maxBookingDate) {
+            alert("Chỉ được đặt lịch trong vòng 7 ngày sắp tới");
+            return;
+        }
+
+        if (createForm.danhSachDichVu.length === 0) {
+            alert("Vui lòng chọn ít nhất một dịch vụ");
+            return;
+        }
+
+        try {
+            await adminTaoLich({
+                tenKhach: createForm.tenKhach.trim(),
+                sdtKhach: createForm.sdtKhach.trim(),
+                maNhanVien: Number(createForm.maNhanVien),
+                ngayHen: createForm.ngayHen,
+                gioHen: createForm.gioHen,
+                danhSachDichVu: createForm.danhSachDichVu,
+                nguoiTao: localStorage.getItem("hoTen") || "Admin",
+                ghiChu: createForm.ghiChu
+            });
+
+            alert("Tạo lịch hẹn trực tiếp thành công");
+
+            resetCreateForm();
+            setShowCreate(false);
+            loadData();
+        } catch (error) {
+            alert(error.response?.data || "Tạo lịch hẹn thất bại");
+        }
+    };
+
+    const formatSlot = (time) => {
+        if (!time) return "";
+        return time.slice(0, 5);
+    };
+
+    const tongTienCreate = createForm.danhSachDichVu.reduce((sum, id) => {
+        const dv = dichVuList.find((x) => x.maDichVu === id);
+        return sum + Number(dv?.gia || 0);
+    }, 0);
+
+    const tongThoiGianCreate = createForm.danhSachDichVu.reduce((sum, id) => {
+        const dv = dichVuList.find((x) => x.maDichVu === id);
+        return sum + Number(dv?.thoiGianThucHien || 0);
+    }, 0);
+
     return (
         <div>
-            <h2 className="mb-4">Quản lý lịch hẹn</h2>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2 className="mb-0">Quản lý lịch hẹn</h2>
+
+                <button
+                    className="btn btn-primary"
+                    onClick={() => {
+                        resetCreateForm();
+                        setShowCreate(true);
+                    }}
+                >
+                    + Thêm lịch hẹn
+                </button>
+            </div>
 
             <div className="card border-0 shadow-sm mb-3">
                 <div className="card-body">
@@ -232,6 +420,7 @@ function AdminLichPage() {
                                 <th>Khách hàng</th>
                                 <th>Nhân viên</th>
                                 <th>Dịch vụ</th>
+                                <th>Nguồn</th>
                                 <th>Ngày</th>
                                 <th>Giờ</th>
                                 <th>Tổng tiền</th>
@@ -244,16 +433,13 @@ function AdminLichPage() {
                             {filteredLichHen.map((item) => (
                                 <tr key={item.id}>
                                     <td>LH{item.id}</td>
-
                                     <td>
                                         <div className="fw-semibold">
                                             {item.khachHang?.hoTen}
                                         </div>
                                         <small>{item.khachHang?.sdt}</small>
                                     </td>
-
                                     <td>{item.nhanVien?.hoTen}</td>
-
                                     <td>
                                         {item.chiTiet?.map((ct, index) => (
                                             <div key={index}>
@@ -261,17 +447,16 @@ function AdminLichPage() {
                                             </div>
                                         ))}
                                     </td>
-
-                                    <td>{item.ngayHen}</td>
-
                                     <td>
-                                        {item.gioHen} - {item.gioKetThucDuKien}
+                                        <span className="badge bg-secondary">
+                                            {item.nguonDat || "ONLINE"}
+                                        </span>
                                     </td>
-
+                                    <td>{item.ngayHen}</td>
+                                    <td>{item.gioHen} - {item.gioKetThucDuKien}</td>
                                     <td>
                                         {Number(item.tongTien || 0).toLocaleString()} VNĐ
                                     </td>
-
                                     <td>
                                         <span
                                             className={
@@ -287,7 +472,6 @@ function AdminLichPage() {
                                             {trangThaiText(item.trangThai)}
                                         </span>
                                     </td>
-
                                     <td>
                                         <button
                                             className="btn btn-secondary btn-sm me-2 mb-1"
@@ -328,7 +512,7 @@ function AdminLichPage() {
 
                             {filteredLichHen.length === 0 && (
                                 <tr>
-                                    <td colSpan="9" className="text-center py-4">
+                                    <td colSpan="10" className="text-center py-4">
                                         Không tìm thấy lịch hẹn phù hợp
                                     </td>
                                 </tr>
@@ -337,6 +521,233 @@ function AdminLichPage() {
                     </table>
                 </div>
             </div>
+
+            {showCreate && (
+                <div
+                    className="modal d-block"
+                    tabIndex="-1"
+                    style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+                >
+                    <div className="modal-dialog modal-xl modal-dialog-centered">
+                        <div className="modal-content">
+                            <form onSubmit={handleAdminTaoLich}>
+                                <div className="modal-header">
+                                    <h5 className="modal-title">Thêm lịch hẹn trực tiếp</h5>
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        onClick={() => {
+                                            resetCreateForm();
+                                            setShowCreate(false);
+                                        }}
+                                    ></button>
+                                </div>
+
+                                <div className="modal-body">
+                                    <div className="row">
+                                        <div className="col-md-6 mb-3">
+                                            <label>Tên khách hàng</label>
+                                            <input
+                                                className="form-control"
+                                                value={createForm.tenKhach}
+                                                onChange={(e) =>
+                                                    setCreateForm({
+                                                        ...createForm,
+                                                        tenKhach: e.target.value
+                                                    })
+                                                }
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="col-md-6 mb-3">
+                                            <label>Số điện thoại</label>
+                                            <input
+                                                className="form-control"
+                                                value={createForm.sdtKhach}
+                                                onChange={(e) =>
+                                                    setCreateForm({
+                                                        ...createForm,
+                                                        sdtKhach: e.target.value
+                                                    })
+                                                }
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="col-md-4 mb-3">
+                                            <label>Ngày hẹn</label>
+                                            <input
+                                                type="date"
+                                                className="form-control"
+                                                value={createForm.ngayHen}
+                                                min={minBookingDate}
+                                                max={maxBookingDate}
+                                                onChange={(e) => {
+                                                    const nextForm = {
+                                                        ...createForm,
+                                                        ngayHen: e.target.value,
+                                                        gioHen: ""
+                                                    };
+                                                    setCreateForm(nextForm);
+                                                    loadCreateSlots(nextForm);
+                                                }}
+                                                required
+                                            />
+                                            <small className="text-muted">
+                                                Chỉ được đặt lịch từ hôm nay đến 7 ngày tới.
+                                            </small>
+                                        </div>
+
+                                        <div className="col-md-4 mb-3">
+                                            <label>Nhân viên</label>
+                                            <select
+                                                className="form-select"
+                                                value={createForm.maNhanVien}
+                                                onChange={(e) => {
+                                                    const nextForm = {
+                                                        ...createForm,
+                                                        maNhanVien: e.target.value,
+                                                        gioHen: ""
+                                                    };
+                                                    setCreateForm(nextForm);
+                                                    loadCreateSlots(nextForm);
+                                                }}
+                                                required
+                                            >
+                                                <option value="">-- Chọn nhân viên --</option>
+                                                {nhanVienList.map((nv) => (
+                                                    <option key={nv.maNhanVien} value={nv.maNhanVien}>
+                                                        {nv.hoTen}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="col-md-4 mb-3">
+                                            <label>Giờ hẹn</label>
+                                            <select
+                                                className="form-select"
+                                                value={createForm.gioHen}
+                                                onChange={(e) =>
+                                                    setCreateForm({
+                                                        ...createForm,
+                                                        gioHen: e.target.value
+                                                    })
+                                                }
+                                                disabled={
+                                                    !createForm.ngayHen ||
+                                                    !createForm.maNhanVien ||
+                                                    createForm.danhSachDichVu.length === 0
+                                                }
+                                                required
+                                            >
+                                                <option value="">-- Chọn giờ trống --</option>
+
+                                                {createSlots.map((slot, index) => (
+                                                    <option key={index} value={slot.start}>
+                                                        {formatSlot(slot.start)} - {formatSlot(slot.end)}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="col-md-12 mb-3">
+                                            <label>Dịch vụ</label>
+
+                                            <input
+                                                className="form-control mb-2"
+                                                placeholder="Tìm dịch vụ..."
+                                                value={serviceKeyword}
+                                                onChange={(e) => setServiceKeyword(e.target.value)}
+                                            />
+
+                                            <div
+                                                className="border rounded p-2"
+                                                style={{ maxHeight: "230px", overflowY: "auto" }}
+                                            >
+                                                {dichVuList
+                                                    .filter((dv) =>
+                                                        dv.tenDichVu
+                                                            ?.toLowerCase()
+                                                            .includes(serviceKeyword.toLowerCase())
+                                                    )
+                                                    .map((dv) => {
+                                                        const checked = createForm.danhSachDichVu.includes(dv.maDichVu);
+
+                                                        return (
+                                                            <div
+                                                                key={dv.maDichVu}
+                                                                className="d-flex justify-content-between align-items-center border-bottom py-2"
+                                                            >
+                                                                <label className="form-check mb-0">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="form-check-input"
+                                                                        checked={checked}
+                                                                        onChange={() => toggleDichVuCreate(dv.maDichVu)}
+                                                                    />
+                                                                    <span className="form-check-label ms-2">
+                                                                        {dv.tenDichVu}
+                                                                    </span>
+                                                                </label>
+
+                                                                <small className="text-muted">
+                                                                    {dv.thoiGianThucHien} phút - {Number(dv.gia || 0).toLocaleString()} VNĐ
+                                                                </small>
+                                                            </div>
+                                                        );
+                                                    })}
+                                            </div>
+
+                                            <div className="mt-2">
+                                                <b>Tổng thời gian:</b> {tongThoiGianCreate} phút |{" "}
+                                                <b>Tổng tiền:</b>{" "}
+                                                <span className="text-danger fw-bold">
+                                                    {tongTienCreate.toLocaleString()} VNĐ
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="col-md-12 mb-3">
+                                            <label>Ghi chú</label>
+                                            <textarea
+                                                className="form-control"
+                                                rows="3"
+                                                value={createForm.ghiChu}
+                                                onChange={(e) =>
+                                                    setCreateForm({
+                                                        ...createForm,
+                                                        ghiChu: e.target.value
+                                                    })
+                                                }
+                                                placeholder="Ví dụ: Khách gọi điện đặt lịch"
+                                            ></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="modal-footer">
+                                    <button type="submit" className="btn btn-primary">
+                                        Lưu lịch hẹn
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={() => {
+                                            resetCreateForm();
+                                            setShowCreate(false);
+                                        }}
+                                    >
+                                        Đóng
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {showDetail && selectedLich && (
                 <div
@@ -366,16 +777,18 @@ function AdminLichPage() {
                                         <p><b>Khách hàng:</b> {selectedLich.khachHang?.hoTen}</p>
                                         <p><b>SĐT:</b> {selectedLich.khachHang?.sdt}</p>
                                         <p><b>Nhân viên:</b> {selectedLich.nhanVien?.hoTen}</p>
+                                        <p><b>Nguồn đặt:</b> {selectedLich.nguonDat || "ONLINE"}</p>
                                     </div>
 
                                     <div className="col-md-6">
                                         <p><b>Ngày hẹn:</b> {selectedLich.ngayHen}</p>
-                                        <p>
-                                            <b>Giờ:</b> {selectedLich.gioHen} - {selectedLich.gioKetThucDuKien}
-                                        </p>
+                                        <p><b>Giờ:</b> {selectedLich.gioHen} - {selectedLich.gioKetThucDuKien}</p>
                                         <p><b>Trạng thái:</b> {trangThaiText(selectedLich.trangThai)}</p>
+                                        <p><b>Người tạo:</b> {selectedLich.nguoiTao || "-"}</p>
                                     </div>
                                 </div>
+
+                                <p><b>Ghi chú:</b> {selectedLich.ghiChu || "-"}</p>
 
                                 <h6>Dịch vụ</h6>
 
@@ -518,6 +931,7 @@ function AdminLichPage() {
                                                 required
                                             >
                                                 <option value="">-- Chọn nhân viên --</option>
+
                                                 {nhanVienList.map((nv) => (
                                                     <option
                                                         key={nv.maNhanVien}
@@ -532,27 +946,67 @@ function AdminLichPage() {
                                         <div className="col-md-12 mb-3">
                                             <label>Dịch vụ</label>
 
-                                            <div className="row mt-2">
-                                                {dichVuList.map((dv) => (
-                                                    <div
-                                                        className="col-md-6 mb-2"
-                                                        key={dv.maDichVu}
-                                                    >
-                                                        <label className="form-check">
-                                                            <input
-                                                                type="checkbox"
-                                                                className="form-check-input"
-                                                                checked={editForm.danhSachDichVu.includes(dv.maDichVu)}
-                                                                onChange={() => toggleDichVu(dv.maDichVu)}
-                                                            />
+                                            <input
+                                                className="form-control mb-2"
+                                                placeholder="Tìm dịch vụ..."
+                                                value={serviceKeyword}
+                                                onChange={(e) => setServiceKeyword(e.target.value)}
+                                            />
 
-                                                            <span className="form-check-label">
-                                                                {dv.tenDichVu} - {Number(dv.gia || 0).toLocaleString()} VNĐ
-                                                            </span>
-                                                        </label>
-                                                    </div>
-                                                ))}
+                                            <div
+                                                className="border rounded p-2"
+                                                style={{ maxHeight: "230px", overflowY: "auto" }}
+                                            >
+                                                {dichVuList
+                                                    .filter((dv) =>
+                                                        dv.tenDichVu
+                                                            ?.toLowerCase()
+                                                            .includes(serviceKeyword.toLowerCase())
+                                                    )
+                                                    .map((dv) => {
+                                                        const checked = editForm.danhSachDichVu.includes(dv.maDichVu);
+
+                                                        return (
+                                                            <div
+                                                                key={dv.maDichVu}
+                                                                className="d-flex justify-content-between align-items-center border-bottom py-2"
+                                                            >
+                                                                <label className="form-check mb-0">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="form-check-input"
+                                                                        checked={checked}
+                                                                        onChange={() => toggleDichVu(dv.maDichVu)}
+                                                                    />
+
+                                                                    <span className="form-check-label ms-2">
+                                                                        {dv.tenDichVu}
+                                                                    </span>
+                                                                </label>
+
+                                                                <small className="text-muted">
+                                                                    {dv.thoiGianThucHien} phút -{" "}
+                                                                    {Number(dv.gia || 0).toLocaleString()} VNĐ
+                                                                </small>
+                                                            </div>
+                                                        );
+                                                    })}
                                             </div>
+
+                                            {editForm.danhSachDichVu.length > 0 && (
+                                                <div className="mt-2">
+                                                    <b>Đã chọn:</b>{" "}
+                                                    {editForm.danhSachDichVu.map((id) => {
+                                                        const dv = dichVuList.find((x) => x.maDichVu === id);
+
+                                                        return (
+                                                            <span key={id} className="badge bg-dark me-1">
+                                                                {dv?.tenDichVu}
+                                                            </span>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="col-md-12 mb-3">

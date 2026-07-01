@@ -37,3 +37,7 @@ export const getLichSuLich = (id) => {
 export const suaLichAdmin = (id, data) => {
     return axios.put(`${API}/${id}/sua-admin`, data);
 };
+
+export const adminTaoLich = (data) => {
+    return axios.post(`${API}/admin-tao`, data);
+};

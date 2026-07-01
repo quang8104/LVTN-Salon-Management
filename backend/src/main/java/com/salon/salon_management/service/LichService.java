@@ -23,6 +23,7 @@ import com.salon.salon_management.repository.KhachHangRepository;
 import com.salon.salon_management.repository.LichRepository;
 import com.salon.salon_management.repository.LichSuLichHenRepository;
 import com.salon.salon_management.repository.NhanVienRepository;
+import com.salon.salon_management.dto.AdminTaoLichRequest;
 
 import jakarta.transaction.Transactional;
 
@@ -397,5 +398,90 @@ public class LichService {
 
     public List<LichSuLichHen> getLichSu(Integer lichId) {
         return lichSuRepo.findByLichHen_IdOrderByThoiGianDesc(lichId);
+    }
+
+    public Lich adminTaoLich(AdminTaoLichRequest request) {
+        if (request.getTenKhach() == null || request.getTenKhach().trim().isEmpty()) {
+            throw new RuntimeException("Vui lòng nhập tên khách hàng");
+        }
+
+        if (request.getSdtKhach() == null || request.getSdtKhach().trim().isEmpty()) {
+            throw new RuntimeException("Vui lòng nhập số điện thoại khách hàng");
+        }
+
+        if (request.getDanhSachDichVu() == null || request.getDanhSachDichVu().isEmpty()) {
+            throw new RuntimeException("Vui lòng chọn ít nhất một dịch vụ");
+        }
+
+        if (request.getNgayHen() == null || request.getGioHen() == null) {
+            throw new RuntimeException("Vui lòng chọn ngày và giờ hẹn");
+        }
+
+        KhachHang khachHang = khachHangRepository.findBySdt(request.getSdtKhach())
+                .orElseGet(() -> {
+                    KhachHang kh = new KhachHang();
+                    kh.setHoTen(request.getTenKhach());
+                    kh.setSdt(request.getSdtKhach());
+                    return khachHangRepository.save(kh);
+                });
+
+        double tongTien = 0;
+        int tongThoiGian = 0;
+        int buffer = 30;
+
+        List<DichVu> danhSachDichVu = new ArrayList<>();
+
+        for (Integer maDichVu : request.getDanhSachDichVu()) {
+            DichVu dv = dichVuRepository.findById(maDichVu)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy dịch vụ"));
+
+            danhSachDichVu.add(dv);
+            tongTien += dv.getGia();
+            tongThoiGian += dv.getThoiGianThucHien();
+        }
+
+        LocalTime gioBatDauMoi = request.getGioHen();
+        LocalTime gioKetThucMoi = gioBatDauMoi.plusMinutes(tongThoiGian + buffer);
+
+        NhanVien nhanVien = nhanVienRepository.findById(request.getMaNhanVien())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên"));
+
+        kiemTraTrungLich(
+                nhanVien.getMaNhanVien(),
+                request.getNgayHen(),
+                gioBatDauMoi,
+                gioKetThucMoi
+        );
+
+        Lich lich = new Lich();
+
+        lich.setKhachHang(khachHang);
+        lich.setNhanVien(nhanVien);
+        lich.setNgayHen(request.getNgayHen());
+        lich.setGioHen(gioBatDauMoi);
+        lich.setGioKetThucDuKien(gioKetThucMoi);
+        lich.setTongTien(tongTien);
+        lich.setTongThoiGian(tongThoiGian);
+        lich.setThoiGianBuffer(buffer);
+        lich.setTrangThai(1);
+        lich.setNguonDat("ADMIN");
+        lich.setNguoiTao(request.getNguoiTao());
+        lich.setGhiChu(request.getGhiChu());
+
+        lich = lichRepository.save(lich);
+
+        for (DichVu dv : danhSachDichVu) {
+            ChiTietLichHen ct = new ChiTietLichHen();
+
+            ct.setLich(lich);
+            ct.setDichVu(dv);
+            ct.setNhanVien(nhanVien);
+            ct.setDonGia(dv.getGia());
+            ct.setThoiGian(dv.getThoiGianThucHien());
+
+            chiTietRepository.save(ct);
+        }
+
+        return lich;
     }
 }

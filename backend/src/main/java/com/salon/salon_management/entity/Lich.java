@@ -59,6 +59,39 @@ public class Lich {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private NhanVien nhanVien;
 
+    @Column(name = "nguon_dat")
+    private String nguonDat;
+
+    @Column(name = "nguoi_tao")
+    private String nguoiTao;
+
+    @Column(name = "ghi_chu", columnDefinition = "TEXT")
+    private String ghiChu;
+
+    public String getNguonDat() {
+        return nguonDat;
+    }
+
+    public void setNguonDat(String nguonDat) {
+        this.nguonDat = nguonDat;
+    }
+
+    public String getNguoiTao() {
+        return nguoiTao;
+    }
+
+    public void setNguoiTao(String nguoiTao) {
+        this.nguoiTao = nguoiTao;
+    }
+
+    public String getGhiChu() {
+        return ghiChu;
+    }
+
+    public void setGhiChu(String ghiChu) {
+        this.ghiChu = ghiChu;
+    }
+
     public Integer getId() {
         return id;
     }
