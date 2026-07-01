@@ -5,19 +5,12 @@ import {
     updateNhanVien,
     deleteNhanVien
 } from "../api/adminNhanVienApi";
-import { getAllServices } from "../api/dichVuApi";
-import {
-    getDichVuTheoNhanVien,
-    ganDichVuChoNhanVien
-} from "../api/chiTietNvdvApi";
 
 function AdminNhanVienPage() {
     const [nhanVien, setNhanVien] = useState([]);
-    const [dichVu, setDichVu] = useState([]);
-    const [selectedDichVu, setSelectedDichVu] = useState([]);
+    const [keyword, setKeyword] = useState("");
     const [editingId, setEditingId] = useState(null);
     const [showForm, setShowForm] = useState(false);
-    const [keywordDichVu, setKeywordDichVu] = useState("");
 
     const [form, setForm] = useState({
         email: "",
@@ -35,43 +28,38 @@ function AdminNhanVienPage() {
     const loadData = async () => {
         try {
             const nvRes = await getAllNhanVien();
-            const dvRes = await getAllServices();
-
-            console.log("NHAN VIEN:", nvRes.data);
-            console.log("DICH VU:", dvRes.data);
 
             const nvList = Array.isArray(nvRes.data)
                 ? nvRes.data
                 : nvRes.data.data || [];
 
-            const dvList = Array.isArray(dvRes.data)
-                ? dvRes.data
-                : dvRes.data.data || [];
-
             setNhanVien(nvList);
-
-            setDichVu(
-                dvList.filter((item) => item.trangThai === 1)
-            );
         } catch (error) {
-            console.log("Lỗi load nhân viên/dịch vụ:", error);
-            alert(error.response?.data || "Không tải được dữ liệu nhân viên hoặc dịch vụ");
+            console.log("Lỗi load nhân viên:", error);
+            alert(error.response?.data || "Không tải được dữ liệu nhân viên");
         }
     };
+
+    const filteredNhanVien = nhanVien.filter((item) => {
+        const text = keyword.toLowerCase();
+
+        const trangThaiText = item.trangThai === 1 ? "đang làm" : "nghỉ";
+
+        return (
+            String(item.maNhanVien).toLowerCase().includes(text) ||
+            item.hoTen?.toLowerCase().includes(text) ||
+            item.email?.toLowerCase().includes(text) ||
+            item.sdt?.toLowerCase().includes(text) ||
+            item.vaiTro?.toLowerCase().includes(text) ||
+            trangThaiText.includes(text)
+        );
+    });
 
     const change = (e) => {
         setForm({
             ...form,
             [e.target.name]: e.target.value
         });
-    };
-
-    const toggleDichVu = (maDichVu) => {
-        if (selectedDichVu.includes(maDichVu)) {
-            setSelectedDichVu(selectedDichVu.filter((id) => id !== maDichVu));
-        } else {
-            setSelectedDichVu([...selectedDichVu, maDichVu]);
-        }
     };
 
     const resetForm = () => {
@@ -84,7 +72,6 @@ function AdminNhanVienPage() {
             vaiTro: "NHAN_VIEN"
         });
 
-        setSelectedDichVu([]);
         setEditingId(null);
         setShowForm(false);
     };
@@ -102,22 +89,13 @@ function AdminNhanVienPage() {
             trangThai: Number(form.trangThai)
         };
 
-        let maNhanVien;
-
         if (editingId) {
             await updateNhanVien(editingId, data);
-            maNhanVien = editingId;
             alert("Cập nhật nhân viên thành công");
         } else {
-            const res = await createNhanVien(data);
-            maNhanVien = res.data.maNhanVien;
+            await createNhanVien(data);
             alert("Thêm nhân viên thành công");
         }
-
-        await ganDichVuChoNhanVien({
-            maNhanVien,
-            danhSachMaDichVu: selectedDichVu
-        });
 
         resetForm();
         loadData();
@@ -136,12 +114,6 @@ function AdminNhanVienPage() {
             vaiTro: item.vaiTro || "NHAN_VIEN"
         });
 
-        const res = await getDichVuTheoNhanVien(item.maNhanVien);
-
-        setSelectedDichVu(
-            res.data.map((ct) => ct.dichVu.maDichVu)
-        );
-
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
@@ -151,22 +123,6 @@ function AdminNhanVienPage() {
         await deleteNhanVien(id);
         alert("Xóa nhân viên thành công");
         loadData();
-    };
-
-    const filteredDichVu = dichVu.filter((item) =>
-        item.tenDichVu?.toLowerCase().includes(keywordDichVu.toLowerCase())
-    );
-
-    const isAllSelected =
-        dichVu.length > 0 &&
-        dichVu.every((item) => selectedDichVu.includes(item.maDichVu));
-
-    const toggleAllDichVu = () => {
-        if (isAllSelected) {
-            setSelectedDichVu([]);
-        } else {
-            setSelectedDichVu(dichVu.map((item) => item.maDichVu));
-        }
     };
 
     return (
@@ -269,65 +225,6 @@ function AdminNhanVienPage() {
                                         <option value="ADMIN">Admin</option>
                                     </select>
                                 </div>
-
-                                <div className="col-md-12 mb-3">
-                                    <div className="d-flex justify-content-between align-items-center mb-2">
-                                        <label className="form-label fw-bold mb-0">
-                                            Dịch vụ nhân viên có thể làm
-                                        </label>
-
-                                        <button
-                                            type="button"
-                                            className="btn btn-sm btn-outline-dark"
-                                            onClick={toggleAllDichVu}
-                                        >
-                                            {isAllSelected ? "Bỏ chọn tất cả" : "Chọn tất cả"}
-                                        </button>
-                                    </div>
-
-                                    <input
-                                        className="form-control mb-3"
-                                        placeholder="Tìm dịch vụ..."
-                                        value={keywordDichVu}
-                                        onChange={(e) => setKeywordDichVu(e.target.value)}
-                                    />
-
-                                    <div
-                                        className="border rounded p-3"
-                                        style={{
-                                            maxHeight: "260px",
-                                            overflowY: "auto",
-                                            background: "#fff"
-                                        }}
-                                    >
-                                        <div className="row">
-                                            {filteredDichVu.map((item) => (
-                                                <div className="col-md-6 mb-2" key={item.maDichVu}>
-                                                    <label className="d-flex align-items-center border rounded p-2 h-100">
-                                                        <input
-                                                            type="checkbox"
-                                                            className="me-2"
-                                                            checked={selectedDichVu.includes(item.maDichVu)}
-                                                            onChange={() => toggleDichVu(item.maDichVu)}
-                                                        />
-
-                                                        <span>{item.tenDichVu}</span>
-                                                    </label>
-                                                </div>
-                                            ))}
-
-                                            {filteredDichVu.length === 0 && (
-                                                <div className="col-12 text-center text-muted py-3">
-                                                    Không tìm thấy dịch vụ
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <small className="text-muted">
-                                        Đã chọn {selectedDichVu.length}/{dichVu.length} dịch vụ
-                                    </small>
-                                </div>
                             </div>
 
                             <button className="btn btn-primary me-2">
@@ -346,55 +243,78 @@ function AdminNhanVienPage() {
                 </div>
             )}
 
-            <table className="table table-bordered table-hover">
-                <thead className="table-dark">
-                    <tr>
-                        <th>Mã</th>
-                        <th>Họ tên</th>
-                        <th>Email</th>
-                        <th>SĐT</th>
-                        <th>Trạng thái</th>
-                        <th>Vai trò</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
+            <div className="card border-0 shadow-sm mb-3">
+                <div className="card-body">
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Tìm theo mã, họ tên, email, số điện thoại, trạng thái hoặc vai trò..."
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                    />
+                </div>
+            </div>
 
-                <tbody>
-                    {nhanVien.map((item) => (
-                        <tr key={item.maNhanVien}>
-                            <td>{item.maNhanVien}</td>
-                            <td>{item.hoTen}</td>
-                            <td>{item.email}</td>
-                            <td>{item.sdt}</td>
-                            <td>{item.trangThai === 1 ? "Đang làm" : "Nghỉ"}</td>
-                            <td>{item.vaiTro}</td>
-                            <td>
-                                <button
-                                    className="btn btn-warning btn-sm me-2"
-                                    onClick={() => edit(item)}
-                                >
-                                    Sửa
-                                </button>
+            <div className="card border-0 shadow-sm">
+                <div className="card-header bg-white d-flex justify-content-between align-items-center">
+                    <b>Danh sách nhân viên</b>
+                    <span className="badge bg-primary">
+                        {filteredNhanVien.length} nhân viên
+                    </span>
+                </div>
 
-                                <button
-                                    className="btn btn-danger btn-sm"
-                                    onClick={() => remove(item.maNhanVien)}
-                                >
-                                    Xóa
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
+                <div className="card-body p-0">
+                    <table className="table table-bordered table-hover mb-0">
+                        <thead className="table-dark">
+                            <tr>
+                                <th>Mã</th>
+                                <th>Họ tên</th>
+                                <th>Email</th>
+                                <th>SĐT</th>
+                                <th>Trạng thái</th>
+                                <th>Vai trò</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
 
-                    {nhanVien.length === 0 && (
-                        <tr>
-                            <td colSpan="8" className="text-center py-4">
-                                Chưa có nhân viên nào
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+                        <tbody>
+                            {filteredNhanVien.map((item) => (
+                                <tr key={item.maNhanVien}>
+                                    <td>{item.maNhanVien}</td>
+                                    <td>{item.hoTen}</td>
+                                    <td>{item.email}</td>
+                                    <td>{item.sdt}</td>
+                                    <td>{item.trangThai === 1 ? "Đang làm" : "Nghỉ"}</td>
+                                    <td>{item.vaiTro}</td>
+                                    <td>
+                                        <button
+                                            className="btn btn-warning btn-sm me-2"
+                                            onClick={() => edit(item)}
+                                        >
+                                            Sửa
+                                        </button>
+
+                                        <button
+                                            className="btn btn-danger btn-sm"
+                                            onClick={() => remove(item.maNhanVien)}
+                                        >
+                                            Xóa
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+
+                            {filteredNhanVien.length === 0 && (
+                                <tr>
+                                    <td colSpan="7" className="text-center py-4">
+                                        Không tìm thấy nhân viên phù hợp
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 }

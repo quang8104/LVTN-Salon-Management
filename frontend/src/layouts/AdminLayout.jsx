@@ -1,15 +1,28 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useEffect, useState } from "react";
-import {connectWebSocket,disconnectWebSocket} from "../websocket/websocket";
+import { connectWebSocket, disconnectWebSocket } from "../websocket/websocket";
 import { getDonHangChoXacNhan } from "../api/adminDonHangApi";
 
 function AdminLayout() {
     const navigate = useNavigate();
+    const location = useLocation();
 
     const hoTen = localStorage.getItem("hoTen") || "Administrator";
 
     const [orderPendingCount, setOrderPendingCount] = useState(0);
+
+    const isCategoryRoute =
+        location.pathname === "/admin/danh-muc" ||
+        location.pathname === "/admin/danh-muc-dich-vu";
+
+    const [openCategoryMenu, setOpenCategoryMenu] = useState(isCategoryRoute);
+
+    useEffect(() => {
+        if (isCategoryRoute) {
+            setOpenCategoryMenu(true);
+        }
+    }, [isCategoryRoute]);
 
     useEffect(() => {
         loadOrderPendingCount();
@@ -44,33 +57,22 @@ function AdminLayout() {
             loadOrderPendingCount();
         };
 
-        window.addEventListener(
-            "orderStatusChanged",
-            handleOrderStatusChanged
-        );
+        window.addEventListener("orderStatusChanged", handleOrderStatusChanged);
 
         return () => {
             disconnectWebSocket();
-
-            window.removeEventListener(
-                "orderStatusChanged",
-                handleOrderStatusChanged
-            );
+            window.removeEventListener("orderStatusChanged", handleOrderStatusChanged);
         };
     }, []);
 
     const logout = async () => {
-
         const result = await Swal.fire({
             title: "Đăng xuất",
             text: "Bạn có chắc chắn muốn đăng xuất?",
             icon: "question",
-
             showCancelButton: true,
-
             confirmButtonText: "Đăng xuất",
             cancelButtonText: "Hủy",
-
             confirmButtonColor: "#dc3545",
             cancelButtonColor: "#6c757d"
         });
@@ -99,9 +101,12 @@ function AdminLayout() {
     };
 
     const menuClass = ({ isActive }) =>
+        isActive ? "nav-link active-admin-link" : "nav-link admin-link";
+
+    const subMenuClass = ({ isActive }) =>
         isActive
-            ? "nav-link active-admin-link"
-            : "nav-link admin-link";
+            ? "nav-link active-admin-link admin-sub-link"
+            : "nav-link admin-link admin-sub-link";
 
     return (
         <div className="admin-wrapper">
@@ -140,9 +145,29 @@ function AdminLayout() {
                     </li>
 
                     <li>
-                        <NavLink className={menuClass} to="/admin/danh-muc">
-                            📂 Quản lý danh mục
-                        </NavLink>
+                        <button
+                            type="button"
+                            className={
+                                isCategoryRoute
+                                    ? "nav-link active-admin-link w-100 text-start border-0"
+                                    : "nav-link admin-link w-100 text-start border-0"
+                            }
+                            onClick={() => setOpenCategoryMenu(!openCategoryMenu)}
+                        >
+                            📂 Quản lý danh mục {openCategoryMenu ? "▾" : "▸"}
+                        </button>
+
+                        {openCategoryMenu && (
+                            <div className="admin-sub-menu">
+                                <NavLink className={subMenuClass} to="/admin/danh-muc">
+                                    🧴 Danh mục sản phẩm
+                                </NavLink>
+
+                                <NavLink className={subMenuClass} to="/admin/danh-muc-dich-vu">
+                                    ✂️ Danh mục dịch vụ
+                                </NavLink>
+                            </div>
+                        )}
                     </li>
 
                     <li>
@@ -151,6 +176,11 @@ function AdminLayout() {
                         </NavLink>
                     </li>
 
+                    <li>
+                        <NavLink className={menuClass} to="/admin/nghi-phep-nhan-vien">
+                            🗓️ Nghỉ phép nhân viên
+                        </NavLink>
+                    </li>
 
                     <li>
                         <NavLink className={menuClass} to="/admin/don-hang">
@@ -168,11 +198,14 @@ function AdminLayout() {
                             </span>
                         </NavLink>
                     </li>
-
                 </ul>
 
-
                 <div className="admin-sidebar-footer">
+                    <li>
+                        <NavLink className={menuClass} to="/admin/cau-hinh-salon">
+                            ⚙️ Cấu hình salon
+                        </NavLink>
+                    </li>
                     <button className="btn btn-outline-light w-100" onClick={logout}>
                         Đăng xuất
                     </button>
@@ -189,9 +222,9 @@ function AdminLayout() {
                     <div className="admin-user">
                         <button
                             className="btn btn-light me-2"
-                            onClick={() => navigate("/")}
+                            onClick={() => window.open("/", "_blank")}
                         >
-                            Về trang chủ
+                            Xem trang chủ
                         </button>
 
                         <div className="admin-avatar">

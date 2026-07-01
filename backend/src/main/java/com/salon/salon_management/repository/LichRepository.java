@@ -29,4 +29,11 @@ public interface LichRepository extends JpaRepository<Lich, Integer> {
             @Param("maNhanVien") Integer maNhanVien,
             @Param("ngayHen") LocalDate ngayHen
     );
+
+    List<Lich> findByNhanVien_MaNhanVienAndNgayHenBetweenAndTrangThaiNot(
+            Integer maNhanVien,
+            LocalDate tuNgay,
+            LocalDate denNgay,
+            Integer trangThai
+    );
 }

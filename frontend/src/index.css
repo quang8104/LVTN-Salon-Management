@@ -153,3 +153,13 @@ body{
 .admin-content {
     padding: 28px;
 }
+
+.admin-sub-menu {
+    margin-left: 18px;
+    margin-top: 4px;
+}
+
+.admin-sub-link {
+    font-size: 15px;
+    padding-left: 18px !important;
+}

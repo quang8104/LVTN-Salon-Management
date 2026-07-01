@@ -4,9 +4,12 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.*;
 
+import com.salon.salon_management.dto.LichHenReasonRequest;
+import com.salon.salon_management.dto.SuaLichAdminRequest;
 import com.salon.salon_management.dto.TaoLichRequest;
 import com.salon.salon_management.entity.ChiTietLichHen;
 import com.salon.salon_management.entity.Lich;
+import com.salon.salon_management.entity.LichSuLichHen;
 import com.salon.salon_management.service.LichService;
 
 @RestController
@@ -68,4 +71,26 @@ public class LichController {
     public Lich huy(@PathVariable Integer id) {
         return service.huy(id);
     }
+
+    @PutMapping("/{id}/huy-admin")
+    public Lich huyAdmin(
+            @PathVariable Integer id,
+            @RequestBody LichHenReasonRequest request
+    ) {
+        return service.huyAdmin(id, request);
+    }
+
+    @GetMapping("/{id}/lich-su")
+    public List<LichSuLichHen> getLichSu(@PathVariable Integer id) {
+        return service.getLichSu(id);
+    }
+
+    @PutMapping("/{id}/sua-admin")
+    public Lich suaLichAdmin(
+            @PathVariable Integer id,
+            @RequestBody SuaLichAdminRequest request
+    ) {
+        return service.suaLichAdmin(id, request);
+    }
 }
+

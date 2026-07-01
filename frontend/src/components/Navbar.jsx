@@ -138,14 +138,6 @@ function Navbar() {
                                 </span>
                             )}
                         </Link>
-                    
-
-                        <Link
-                            to="/lich-su"
-                            className="btn btn-outline-light me-2"
-                        >
-                            📅
-                        </Link>
                     </>
                 )
             }
@@ -185,6 +177,12 @@ function Navbar() {
                         <Link className="dropdown-item" to="/don-hang-cua-toi"> 
                          Đơn hàng của tôi 
                         </Link> 
+                    </li>
+
+                    <li>
+                        <Link className="dropdown-item" to="/lich-su">
+                            Lịch đặt của tôi
+                        </Link>
                     </li>
                     
                     <li>

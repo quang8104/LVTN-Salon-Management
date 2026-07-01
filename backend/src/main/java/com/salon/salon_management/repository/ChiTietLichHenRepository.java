@@ -12,4 +12,6 @@ public interface ChiTietLichHenRepository
 
     List<ChiTietLichHen> findByLich_Id(Integer maLichHen);
 
+    void deleteByLich_Id(Integer lichId);
+
 }

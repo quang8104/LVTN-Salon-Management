@@ -5,19 +5,23 @@ import {
     updateDichVu,
     deleteDichVu
 } from "../api/adminDichVuApi";
+import { getActiveDanhMucDichVu } from "../api/danhMucDichVuApi";
 
 function AdminDichVuPage() {
     const [dichVu, setDichVu] = useState([]);
+    const [danhMuc, setDanhMuc] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [showForm, setShowForm] = useState(false);
+    const [keyword, setKeyword] = useState("");
 
     const [form, setForm] = useState({
         tenDichVu: "",
+        maDanhMucDichVu: "",
         moTa: "",
         gia: "",
         thoiGianThucHien: "",
         anhGioiThieu: "",
-        trangThai: 1,
+        trangThai: 1
     });
 
     useEffect(() => {
@@ -25,8 +29,16 @@ function AdminDichVuPage() {
     }, []);
 
     const loadData = async () => {
-        const res = await getAllDichVu();
-        setDichVu(res.data);
+        try {
+            const dvRes = await getAllDichVu();
+            const dmRes = await getActiveDanhMucDichVu();
+
+            setDichVu(Array.isArray(dvRes.data) ? dvRes.data : dvRes.data.data || []);
+            setDanhMuc(Array.isArray(dmRes.data) ? dmRes.data : dmRes.data.data || []);
+        } catch (error) {
+            console.log(error);
+            alert(error.response?.data || "Không tải được dữ liệu dịch vụ");
+        }
     };
 
     const change = (e) => {
@@ -38,7 +50,6 @@ function AdminDichVuPage() {
 
     const changeImage = (e) => {
         const file = e.target.files[0];
-
         if (!file) return;
 
         if (!file.type.startsWith("image/")) {
@@ -61,12 +72,14 @@ function AdminDichVuPage() {
     const resetForm = () => {
         setForm({
             tenDichVu: "",
+            maDanhMucDichVu: "",
             moTa: "",
             gia: "",
             thoiGianThucHien: "",
             anhGioiThieu: "",
-            trangThai: 1,
+            trangThai: 1
         });
+
         setEditingId(null);
         setShowForm(false);
     };
@@ -79,23 +92,38 @@ function AdminDichVuPage() {
     const submit = async (e) => {
         e.preventDefault();
 
-        const data = {
-            ...form,
-            gia: Number(form.gia),
-            thoiGianThucHien: Number(form.thoiGianThucHien),
-            trangThai: Number(form.trangThai),
-        };
-
-        if (editingId) {
-            await updateDichVu(editingId, data);
-            alert("Cập nhật dịch vụ thành công");
-        } else {
-            await createDichVu(data);
-            alert("Thêm dịch vụ thành công");
+        if (!form.maDanhMucDichVu) {
+            alert("Vui lòng chọn danh mục dịch vụ");
+            return;
         }
 
-        resetForm();
-        loadData();
+        const data = {
+            tenDichVu: form.tenDichVu,
+            moTa: form.moTa,
+            gia: Number(form.gia),
+            thoiGianThucHien: Number(form.thoiGianThucHien),
+            anhGioiThieu: form.anhGioiThieu,
+            trangThai: Number(form.trangThai),
+            danhMucDichVu: {
+                maDanhMucDichVu: Number(form.maDanhMucDichVu)
+            }
+        };
+
+        try {
+            if (editingId) {
+                await updateDichVu(editingId, data);
+                alert("Cập nhật dịch vụ thành công");
+            } else {
+                await createDichVu(data);
+                alert("Thêm dịch vụ thành công");
+            }
+
+            resetForm();
+            loadData();
+        } catch (error) {
+            console.log(error);
+            alert(error.response?.data || "Lưu dịch vụ thất bại");
+        }
     };
 
     const edit = (item) => {
@@ -104,26 +132,40 @@ function AdminDichVuPage() {
 
         setForm({
             tenDichVu: item.tenDichVu || "",
+            maDanhMucDichVu: item.danhMucDichVu?.maDanhMucDichVu || "",
             moTa: item.moTa || "",
             gia: item.gia || "",
             thoiGianThucHien: item.thoiGianThucHien || "",
             anhGioiThieu: item.anhGioiThieu || "",
-            trangThai: item.trangThai ?? 1,
+            trangThai: item.trangThai ?? 1
         });
 
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     const remove = async (id) => {
         if (!window.confirm("Bạn có chắc muốn xóa dịch vụ này?")) return;
 
-        await deleteDichVu(id);
-        alert("Xóa dịch vụ thành công");
-        loadData();
+        try {
+            await deleteDichVu(id);
+            alert("Xóa dịch vụ thành công");
+            loadData();
+        } catch (error) {
+            console.log(error);
+            alert(error.response?.data || "Xóa dịch vụ thất bại");
+        }
     };
+
+    const filteredDichVu = dichVu.filter((item) => {
+        const text = keyword.trim().toLowerCase();
+        if (!text) return true;
+
+        return (
+            String(item.maDichVu).includes(text) ||
+            item.tenDichVu?.toLowerCase().includes(text) ||
+            item.danhMucDichVu?.tenDanhMuc?.toLowerCase().includes(text)
+        );
+    });
 
     return (
         <div>
@@ -145,9 +187,7 @@ function AdminDichVuPage() {
             {showForm && (
                 <div className="card border-0 shadow-sm mb-4">
                     <div className="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
-                        <span>
-                            {editingId ? "Cập nhật dịch vụ" : "Thêm dịch vụ"}
-                        </span>
+                        <span>{editingId ? "Cập nhật dịch vụ" : "Thêm dịch vụ"}</span>
 
                         <button
                             type="button"
@@ -170,6 +210,27 @@ function AdminDichVuPage() {
                                         onChange={change}
                                         required
                                     />
+                                </div>
+
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">Danh mục dịch vụ</label>
+                                    <select
+                                        className="form-select"
+                                        name="maDanhMucDichVu"
+                                        value={form.maDanhMucDichVu}
+                                        onChange={change}
+                                        required
+                                    >
+                                        <option value="">-- Chọn danh mục --</option>
+                                        {danhMuc.map((item) => (
+                                            <option
+                                                key={item.maDanhMucDichVu}
+                                                value={item.maDanhMucDichVu}
+                                            >
+                                                {item.tenDanhMuc}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 <div className="col-md-3 mb-3">
@@ -195,6 +256,19 @@ function AdminDichVuPage() {
                                         required
                                     />
                                     <small className="text-muted">Đơn vị: phút</small>
+                                </div>
+
+                                <div className="col-md-3 mb-3">
+                                    <label className="form-label">Trạng thái</label>
+                                    <select
+                                        className="form-select"
+                                        name="trangThai"
+                                        value={form.trangThai}
+                                        onChange={change}
+                                    >
+                                        <option value={1}>Hoạt động</option>
+                                        <option value={0}>Ngừng</option>
+                                    </select>
                                 </div>
 
                                 <div className="col-md-8 mb-3">
@@ -228,24 +302,9 @@ function AdminDichVuPage() {
                                                 }}
                                             />
                                         ) : (
-                                            <span className="text-muted">
-                                                Chưa chọn ảnh
-                                            </span>
+                                            <span className="text-muted">Chưa chọn ảnh</span>
                                         )}
                                     </div>
-                                </div>
-
-                                <div className="col-md-3 mb-3">
-                                    <label className="form-label">Trạng thái</label>
-                                    <select
-                                        className="form-select"
-                                        name="trangThai"
-                                        value={form.trangThai}
-                                        onChange={change}
-                                    >
-                                        <option value={1}>Hoạt động</option>
-                                        <option value={0}>Ngừng</option>
-                                    </select>
                                 </div>
 
                                 <div className="col-md-12 mb-3">
@@ -276,10 +335,23 @@ function AdminDichVuPage() {
                 </div>
             )}
 
+            <div className="card border-0 shadow-sm mb-3">
+                <div className="card-body">
+                    <input
+                        className="form-control"
+                        placeholder="Tìm theo mã, tên dịch vụ hoặc danh mục..."
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                    />
+                </div>
+            </div>
+
             <div className="card border-0 shadow-sm">
                 <div className="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
                     <span>Danh sách dịch vụ</span>
-                    <span className="badge bg-primary">{dichVu.length} dịch vụ</span>
+                    <span className="badge bg-primary">
+                        {filteredDichVu.length} dịch vụ
+                    </span>
                 </div>
 
                 <div className="card-body p-0">
@@ -289,6 +361,7 @@ function AdminDichVuPage() {
                                 <th>Mã</th>
                                 <th>Ảnh</th>
                                 <th>Tên</th>
+                                <th>Danh mục</th>
                                 <th>Giá</th>
                                 <th>Thời gian</th>
                                 <th>Trạng thái</th>
@@ -297,7 +370,7 @@ function AdminDichVuPage() {
                         </thead>
 
                         <tbody>
-                            {dichVu.map((item) => (
+                            {filteredDichVu.map((item) => (
                                 <tr key={item.maDichVu}>
                                     <td>{item.maDichVu}</td>
 
@@ -315,18 +388,13 @@ function AdminDichVuPage() {
                                                 }}
                                             />
                                         ) : (
-                                            <span className="text-muted">
-                                                Không có ảnh
-                                            </span>
+                                            <span className="text-muted">Không có ảnh</span>
                                         )}
                                     </td>
 
-                                    <td className="fw-semibold">
-                                        {item.tenDichVu}
-                                    </td>
-
+                                    <td className="fw-semibold">{item.tenDichVu}</td>
+                                    <td>{item.danhMucDichVu?.tenDanhMuc || "-"}</td>
                                     <td>{item.gia?.toLocaleString()} VNĐ</td>
-
                                     <td>{item.thoiGianThucHien} phút</td>
 
                                     <td>
@@ -337,9 +405,7 @@ function AdminDichVuPage() {
                                                     : "badge bg-secondary"
                                             }
                                         >
-                                            {item.trangThai === 1
-                                                ? "Hoạt động"
-                                                : "Ngừng"}
+                                            {item.trangThai === 1 ? "Hoạt động" : "Ngừng"}
                                         </span>
                                     </td>
 
@@ -353,9 +419,7 @@ function AdminDichVuPage() {
 
                                         <button
                                             className="btn btn-danger btn-sm"
-                                            onClick={() =>
-                                                remove(item.maDichVu)
-                                            }
+                                            onClick={() => remove(item.maDichVu)}
                                         >
                                             Xóa
                                         </button>
@@ -363,10 +427,10 @@ function AdminDichVuPage() {
                                 </tr>
                             ))}
 
-                            {dichVu.length === 0 && (
+                            {filteredDichVu.length === 0 && (
                                 <tr>
-                                    <td colSpan="7" className="text-center py-4">
-                                        Chưa có dịch vụ nào
+                                    <td colSpan="8" className="text-center py-4">
+                                        Không tìm thấy dịch vụ phù hợp
                                     </td>
                                 </tr>
                             )}

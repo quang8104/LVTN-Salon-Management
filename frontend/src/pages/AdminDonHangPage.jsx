@@ -116,32 +116,38 @@ function AdminDonHangPage() {
 
     return (
         <div>
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2 className="mb-1">Quản lý đơn hàng</h2>
+            <div>
+                <h2 className="mb-4">Quản lý đơn hàng</h2>
+
+                <div className="card border-0 shadow-sm mb-3">
+                    <div className="card-body">
+                        <div className="row g-2">
+                            <div className="col-md-8">
+                                <input
+                                    className="form-control"
+                                    placeholder="Tìm mã đơn, tên khách, SĐT..."
+                                    value={keyword}
+                                    onChange={(e) => setKeyword(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="col-md-4">
+                                <select
+                                    className="form-select"
+                                    value={filter}
+                                    onChange={(e) => setFilter(e.target.value)}
+                                >
+                                    <option value="ALL">Tất cả trạng thái</option>
+                                    <option value="0">Chờ xác nhận</option>
+                                    <option value="1">Đã xác nhận</option>
+                                    <option value="2">Đang giao</option>
+                                    <option value="3">Hoàn thành</option>
+                                    <option value="4">Đã hủy</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <input
-                    className="form-control"
-                    style={{ width: "320px" }}
-                    placeholder="Tìm mã đơn, tên khách, SĐT..."
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                />
-
-                <select
-                    className="form-select"
-                    style={{ width: "220px" }}
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                >
-                    <option value="ALL">Tất cả trạng thái</option>
-                    <option value="0">Chờ xác nhận</option>
-                    <option value="1">Đã xác nhận</option>
-                    <option value="2">Đang giao</option>
-                    <option value="3">Hoàn thành</option>
-                    <option value="4">Đã hủy</option>
-                </select>
             </div>
             
             <div className="card border-0 shadow-sm">

@@ -31,6 +31,9 @@ import AdminDonHangDetailPage from "./pages/AdminDonHangDetailPage";
 import AdminDanhMucPage from "./pages/AdminDanhMucPage";
 import MyOrderPage from "./pages/MyOrderPage";
 import MyOrderDetailPage from "./pages/MyOrderDetailPage";
+import AdminDanhMucDichVuPage from "./pages/AdminDanhMucDichVuPage";
+import AdminCauHinhSalonPage from "./pages/AdminCauHinhSalonPage";
+import AdminNghiPhepNhanVienPage from "./pages/AdminNghiPhepNhanVienPage";
 
 function App() {
     return (
@@ -44,8 +47,6 @@ function App() {
                     <Route path="/dichvu" element={<ServicePage />} />
                     <Route path="/dichvu/:id"element={<ServiceDetailPage />}/>
                     <Route path="/dat-lich" element={<BookingPage />} />
-                    <Route path="/lich-su" element={<HistoryPage />} />
-                    <Route path="/lich-su/:id" element={<HistoryDetailPage />} />
                     <Route path="/san-pham/:id" element={<ProductDetailPage />} />
                     <Route path="/gio-hang" element={<CartPage />} />
                     <Route path="/thanh-toan" element={<CheckoutPage />} />
@@ -55,6 +56,8 @@ function App() {
                     <Route path="/thanh-toan-ngan-hang/:id" element={<BankTransferPage />} />
                     <Route path="/don-hang-cua-toi" element={<MyOrderPage />} />
                     <Route path="/don-hang-cua-toi/:id" element={<MyOrderDetailPage />} />
+                    <Route path="/lich-su" element={<HistoryPage />} />
+                    <Route path="/lich-su/:id" element={<HistoryDetailPage />} />
                 </Route>
 
                 {/* Không dùng layout */}
@@ -73,6 +76,9 @@ function App() {
                     <Route path="/admin/don-hang" element={<AdminDonHangPage />} />
                     <Route path="/admin/don-hang/:id" element={<AdminDonHangDetailPage />} />   
                     <Route path="/admin/danh-muc" element={<AdminDanhMucPage />} />
+                    <Route path="/admin/danh-muc-dich-vu" element={<AdminDanhMucDichVuPage />} />
+                    <Route path="/admin/cau-hinh-salon" element={<AdminCauHinhSalonPage />} />
+                    <Route path="/admin/nghi-phep-nhan-vien" element={<AdminNghiPhepNhanVienPage />} />
                 </Route>
 
             </Routes>

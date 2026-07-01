@@ -25,3 +25,15 @@ export const getChiTietLich = (id) => {
 export const batDauLich = (id) => {
     return axios.put(`${API}/${id}/bat-dau`);
 };
+
+export const huyLichAdmin = (id, data) => {
+    return axios.put(`${API}/${id}/huy-admin`, data);
+};
+
+export const getLichSuLich = (id) => {
+    return axios.get(`${API}/${id}/lich-su`);
+};
+
+export const suaLichAdmin = (id, data) => {
+    return axios.put(`${API}/${id}/sua-admin`, data);
+};

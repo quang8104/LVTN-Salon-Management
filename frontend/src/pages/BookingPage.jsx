@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { getAllServices } from "../api/dichVuApi";
 import { taoLich } from "../api/lichHenApi";
 import { filterBooking } from "../api/bookingApi";
 
 function BookingPage() {
     const userId = localStorage.getItem("userId");
+    const location = useLocation();
+    const serviceIdFromDetail = location.state?.serviceId;
 
     const [services, setServices] = useState([]);
     const [selectedServices, setSelectedServices] = useState([]);
@@ -17,6 +20,37 @@ function BookingPage() {
         gioHen: ""
     });
 
+    const formatDate = (date) => {
+        return date.toISOString().split("T")[0];
+    };
+
+    const today = new Date();
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + 7);
+
+    const minBookingDate = formatDate(today);
+    const maxBookingDate = formatDate(maxDate);
+
+    const filterValidSlots = (slotList, selectedDate) => {
+        if (!selectedDate) return slotList;
+
+        if (selectedDate !== minBookingDate) {
+            return slotList;
+        }
+
+        const now = new Date();
+
+        return slotList.filter((slot) => {
+            const startTime = slot.start;
+            const [hour, minute] = startTime.split(":").map(Number);
+
+            const slotDateTime = new Date();
+            slotDateTime.setHours(hour, minute, 0, 0);
+
+            return slotDateTime > now;
+        });
+    };
+
     useEffect(() => {
         loadServices();
     }, []);
@@ -28,7 +62,22 @@ function BookingPage() {
     const loadServices = async () => {
         try {
             const res = await getAllServices();
-            setServices(res.data.filter((item) => item.trangThai === 1));
+
+            const activeServices = res.data.filter(
+                (item) => item.trangThai === 1
+            );
+
+            setServices(activeServices);
+
+            if (serviceIdFromDetail) {
+                const service = activeServices.find(
+                    (item) => item.maDichVu === Number(serviceIdFromDetail)
+                );
+
+                if (service) {
+                    setSelectedServices([service]);
+                }
+            }
         } catch (error) {
             console.log(error);
         }
@@ -53,18 +102,19 @@ function BookingPage() {
                 date: form.ngayHen || null
             });
 
+            const availableSlots = res.data.availableSlots || [];
+            const validSlots = filterValidSlots(availableSlots, form.ngayHen);
+
             setEmployees(res.data.employees || []);
-            setSlots(res.data.availableSlots || res.data.availableTimeSlots || []);
+            setSlots(validSlots);
 
             if (
-                form.maNhanVien &&
-                !(res.data.employees || []).some(
-                    (nv) => nv.maNhanVien === Number(form.maNhanVien)
-                )
+                form.gioHen &&
+                form.ngayHen &&
+                !validSlots.some((slot) => slot.start === form.gioHen)
             ) {
                 setForm((prev) => ({
                     ...prev,
-                    maNhanVien: "",
                     gioHen: ""
                 }));
             }
@@ -73,7 +123,7 @@ function BookingPage() {
         }
     };
 
-    const addService = async (service) => {
+    const addService = (service) => {
         const existed = selectedServices.some(
             (item) => item.maDichVu === service.maDichVu
         );
@@ -83,48 +133,39 @@ function BookingPage() {
             return;
         }
 
-        const newSelected = [...selectedServices, service];
-
-        try {
-            const res = await filterBooking({
-                selectedServices: newSelected.map((item) => item.maDichVu),
-                employeeId: null,
-                date: null
-            });
-
-            if (!res.data.employees || res.data.employees.length === 0) {
-                alert("Không có nhân viên nào thực hiện được toàn bộ các dịch vụ đã chọn");
-                return;
-            }
-
-            setSelectedServices(newSelected);
-            setForm({
-                maNhanVien: "",
-                ngayHen: "",
-                gioHen: ""
-            });
-        } catch (error) {
-            console.log(error);
-            alert("Không thể kiểm tra dịch vụ");
-        }
+        setSelectedServices([...selectedServices, service]);
     };
 
     const removeService = (id) => {
         setSelectedServices(
             selectedServices.filter((item) => item.maDichVu !== id)
         );
-
-        setForm({
-            maNhanVien: "",
-            ngayHen: "",
-            gioHen: ""
-        });
     };
 
     const change = (e) => {
+        const { name, value } = e.target;
+
+        if (name === "maNhanVien") {
+            setForm({
+                ...form,
+                maNhanVien: value,
+                gioHen: ""
+            });
+            return;
+        }
+
+        if (name === "ngayHen") {
+            setForm({
+                ...form,
+                ngayHen: value,
+                gioHen: ""
+            });
+            return;
+        }
+
         setForm({
             ...form,
-            [e.target.name]: e.target.value
+            [name]: value
         });
     };
 
@@ -137,6 +178,32 @@ function BookingPage() {
         (sum, item) => sum + Number(item.thoiGianThucHien || 0),
         0
     );
+
+    const validateBookingTime = () => {
+        if (form.ngayHen < minBookingDate) {
+            alert("Không được đặt lịch trong quá khứ");
+            return false;
+        }
+
+        if (form.ngayHen > maxBookingDate) {
+            alert("Chỉ được đặt lịch trong vòng 7 ngày sắp tới");
+            return false;
+        }
+
+        if (form.ngayHen === minBookingDate && form.gioHen) {
+            const [hour, minute] = form.gioHen.split(":").map(Number);
+
+            const slotDateTime = new Date();
+            slotDateTime.setHours(hour, minute, 0, 0);
+
+            if (slotDateTime <= new Date()) {
+                alert("Không được chọn giờ đã qua");
+                return false;
+            }
+        }
+
+        return true;
+    };
 
     const submit = async (e) => {
         e.preventDefault();
@@ -151,15 +218,17 @@ function BookingPage() {
             return;
         }
 
-        if (!form.maNhanVien || !form.ngayHen || !form.gioHen) {
-            alert("Vui lòng chọn nhân viên, ngày và giờ hẹn");
+        if (!form.ngayHen || !form.gioHen) {
+            alert("Vui lòng chọn ngày và giờ hẹn");
             return;
         }
+
+        if (!validateBookingTime()) return;
 
         try {
             await taoLich({
                 maKhachHang: Number(userId),
-                maNhanVien: Number(form.maNhanVien),
+                maNhanVien: form.maNhanVien ? Number(form.maNhanVien) : null,
                 ngayHen: form.ngayHen,
                 gioHen: form.gioHen,
                 danhSachDichVu: selectedServices.map((item) => item.maDichVu)
@@ -181,12 +250,17 @@ function BookingPage() {
         }
     };
 
+    const formatSlotTime = (time) => {
+        if (!time) return "";
+        return time.slice(0, 5).replace(":", "h");
+    };
+
     return (
         <div className="container py-5">
             <div className="text-center mb-5">
                 <h2>ĐẶT LỊCH CẮT TÓC</h2>
                 <p className="text-muted">
-                    Chọn nhiều dịch vụ, sau đó chọn nhân viên và khung giờ phù hợp.
+                    Chọn dịch vụ, ngày giờ. Nếu không chọn nhân viên, hệ thống sẽ tự phân công.
                 </p>
             </div>
 
@@ -228,6 +302,7 @@ function BookingPage() {
                                             </p>
 
                                             <button
+                                                type="button"
                                                 className={
                                                     selected
                                                         ? "btn btn-secondary w-100"
@@ -275,6 +350,7 @@ function BookingPage() {
                                     </div>
 
                                     <button
+                                        type="button"
                                         className="btn btn-sm btn-outline-danger"
                                         onClick={() => removeService(item.maDichVu)}
                                     >
@@ -297,17 +373,16 @@ function BookingPage() {
 
                             <form onSubmit={submit}>
                                 <div className="mb-3">
-                                    <label className="form-label">Nhân viên phù hợp</label>
+                                    <label className="form-label">Nhân viên</label>
                                     <select
                                         className="form-select"
                                         name="maNhanVien"
                                         value={form.maNhanVien}
                                         onChange={change}
                                         disabled={selectedServices.length === 0}
-                                        required
                                     >
                                         <option value="">
-                                            -- Chọn nhân viên --
+                                            Hệ thống tự chọn nhân viên
                                         </option>
 
                                         {employees.map((nv) => (
@@ -329,35 +404,56 @@ function BookingPage() {
                                         name="ngayHen"
                                         value={form.ngayHen}
                                         onChange={change}
-                                        min={new Date().toISOString().split("T")[0]}
+                                        min={minBookingDate}
+                                        max={maxBookingDate}
                                         required
                                     />
+                                    <small className="text-muted">
+                                        Chỉ được đặt lịch trong vòng 7 ngày sắp tới.
+                                    </small>
                                 </div>
 
                                 <div className="mb-3">
-                                    <label className="form-label">Giờ trống</label>
-                                    <select
-                                        className="form-select"
-                                        name="gioHen"
-                                        value={form.gioHen}
-                                        onChange={change}
-                                        disabled={!form.maNhanVien || !form.ngayHen}
-                                        required
-                                    >
-                                        <option value="">
-                                            -- Chọn giờ --
-                                        </option>
+                                    <label className="form-label fw-bold">Chọn giờ trống</label>
+                                    <p className="text-muted mb-2">Vui lòng chọn khung giờ phù hợp</p>
 
-                                        {slots.map((slot, index) => (
-                                            <option key={index} value={slot.start}>
-                                                {slot.start} - {slot.end}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="row g-2">
+                                        {slots.map((slot, index) => {
+                                            const selected = form.gioHen === slot.start;
 
-                                    {form.maNhanVien && form.ngayHen && slots.length === 0 && (
-                                        <small className="text-danger">
+                                            return (
+                                                <div className="col-4" key={index}>
+                                                    <button
+                                                        type="button"
+                                                        className={
+                                                            selected
+                                                                ? "btn btn-dark w-100 py-3"
+                                                                : "btn btn-outline-dark w-100 py-3"
+                                                        }
+                                                        disabled={!form.ngayHen || selectedServices.length === 0}
+                                                        onClick={() =>
+                                                            setForm({
+                                                                ...form,
+                                                                gioHen: slot.start
+                                                            })
+                                                        }
+                                                    >
+                                                        {formatSlotTime(slot.start)}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {form.ngayHen && selectedServices.length > 0 && slots.length === 0 && (
+                                        <small className="text-danger d-block mt-2">
                                             Không còn khung giờ phù hợp trong ngày này.
+                                        </small>
+                                    )}
+
+                                    {form.ngayHen && selectedServices.length > 0 && !form.gioHen && slots.length > 0 && (
+                                        <small className="text-danger d-block mt-2">
+                                            Vui lòng chọn giờ đặt lịch.
                                         </small>
                                     )}
                                 </div>

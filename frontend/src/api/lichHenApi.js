@@ -15,3 +15,12 @@ export const getLichHenByKhachHang = (id) => {
 export const getLichHenByNhanVien = (id) => {
     return api.get(`/lich-hen/nhan-vien/${id}`);
 };
+
+export const getChiTietLichHen = (id) => {
+    return api.get(`/lich-hen/${id}/chi-tiet`);
+};
+
+export const huyLichKhachHang = (id) => {
+    return api.put(`/lich-hen/${id}/huy`);
+};
+
