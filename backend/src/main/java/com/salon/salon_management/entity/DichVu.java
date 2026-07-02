@@ -42,6 +42,17 @@ public class DichVu {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private DanhMucDichVu danhMucDichVu;
 
+    @Column(name = "gioi_tinh_ap_dung")
+    private Integer gioiTinhApDung;
+
+    public Integer getGioiTinhApDung() {
+        return gioiTinhApDung;
+    }
+
+    public void setGioiTinhApDung(Integer gioiTinhApDung) {
+        this.gioiTinhApDung = gioiTinhApDung;
+    }
+
     public DanhMucDichVu getDanhMucDichVu() {
         return danhMucDichVu;
     }

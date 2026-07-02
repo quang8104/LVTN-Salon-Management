@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../components/ProductCard";
-import { getAll } from "../api/sanPhamApi";
+import { getAllSanPhamKhuyenMai } from "../api/sanPhamApi";
 import { getActiveDanhMuc } from "../api/danhMucApi";
 
 function ProductPage() {
@@ -19,11 +19,11 @@ function ProductPage() {
 
     const loadData = async () => {
         try {
-            const spRes = await getAll();
+            const spRes = await getAllSanPhamKhuyenMai();
             const dmRes = await getActiveDanhMuc();
 
-            setProducts(spRes.data);
-            setCategories(dmRes.data);
+            setProducts(Array.isArray(spRes.data) ? spRes.data : []);
+            setCategories(Array.isArray(dmRes.data) ? dmRes.data : []);
         } catch (error) {
             console.log(error);
         }
@@ -42,7 +42,6 @@ function ProductPage() {
     });
 
     const totalPages = Math.ceil(filteredProducts.length / pageSize);
-
     const startIndex = (currentPage - 1) * pageSize;
 
     const currentProducts = filteredProducts.slice(

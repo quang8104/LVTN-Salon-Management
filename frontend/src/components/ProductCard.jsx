@@ -1,6 +1,10 @@
 import { Link } from "react-router-dom";
 
 function ProductCard({ product }) {
+    const hasDiscount = Number(product.phanTramGiam || 0) > 0;
+    const giaGoc = Number(product.gia || 0);
+    const giaSauGiam = Number(product.giaSauGiam || product.gia || 0);
+
     return (
         <div className="card h-100 shadow-sm border-0">
             {product.hinhAnh ? (
@@ -25,9 +29,27 @@ function ProductCard({ product }) {
             <div className="card-body d-flex flex-column">
                 <h5>{product.tenSanPham}</h5>
 
-                <p className="text-danger fw-bold">
-                    {Number(product.gia).toLocaleString()} VNĐ
-                </p>
+                {hasDiscount ? (
+                    <div className="mb-2">
+                        <div>
+                            <span className="text-muted text-decoration-line-through">
+                                {giaGoc.toLocaleString()} VNĐ
+                            </span>
+                        </div>
+
+                        <div className="text-danger fw-bold">
+                            {giaSauGiam.toLocaleString()} VNĐ
+                        </div>
+
+                        <span className="badge bg-danger">
+                            -{product.phanTramGiam}%
+                        </span>
+                    </div>
+                ) : (
+                    <p className="text-danger fw-bold mb-2">
+                        {giaGoc.toLocaleString()} VNĐ
+                    </p>
+                )}
 
                 <p className="text-muted small">
                     Còn: {product.soLuongTon}

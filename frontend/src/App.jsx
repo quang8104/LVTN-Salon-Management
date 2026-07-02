@@ -34,6 +34,7 @@ import MyOrderDetailPage from "./pages/MyOrderDetailPage";
 import AdminDanhMucDichVuPage from "./pages/AdminDanhMucDichVuPage";
 import AdminCauHinhSalonPage from "./pages/AdminCauHinhSalonPage";
 import AdminNghiPhepNhanVienPage from "./pages/AdminNghiPhepNhanVienPage";
+import AdminKhuyenMaiPage from "./pages/AdminKhuyenMaiPage";
 
 function App() {
     return (
@@ -79,6 +80,7 @@ function App() {
                     <Route path="/admin/danh-muc-dich-vu" element={<AdminDanhMucDichVuPage />} />
                     <Route path="/admin/cau-hinh-salon" element={<AdminCauHinhSalonPage />} />
                     <Route path="/admin/nghi-phep-nhan-vien" element={<AdminNghiPhepNhanVienPage />} />
+                    <Route path="/admin/khuyen-mai" element={<AdminKhuyenMaiPage />} />
                 </Route>
 
             </Routes>

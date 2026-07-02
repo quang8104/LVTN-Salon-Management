@@ -25,3 +25,7 @@ export const forgotPassword = (data) => {
 export const resetPassword = (data) => {
     return axios.post(`${API}/reset-password`, data);
 };
+
+export const getAllSanPhamKhuyenMai = () => {
+    return axios.get(`${API}/khuyen-mai`);
+};

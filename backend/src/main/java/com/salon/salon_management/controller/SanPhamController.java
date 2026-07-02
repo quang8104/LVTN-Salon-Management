@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.*;
 
+import com.salon.salon_management.dto.SanPhamKhuyenMaiDTO;
 import com.salon.salon_management.dto.SanPhamRequest;
 import com.salon.salon_management.entity.SanPham;
 import com.salon.salon_management.service.SanPhamService;
@@ -46,6 +47,11 @@ public class SanPhamController {
         return service.update(id, request);
     }
 
+    @GetMapping("/khuyen-mai")
+    public List<SanPhamKhuyenMaiDTO> getAllWithKhuyenMai() {
+        return service.getAllWithKhuyenMai();
+    }
+
     @DeleteMapping("/{id}")
     public String delete(@PathVariable Integer id) {
         return service.delete(id);
@@ -55,4 +61,6 @@ public class SanPhamController {
     public List<SanPham> search(@RequestParam String keyword) {
         return service.search(keyword);
     }
+
+    
 }

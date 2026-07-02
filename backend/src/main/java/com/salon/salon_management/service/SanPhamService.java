@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.salon.salon_management.dto.SanPhamKhuyenMaiDTO;
 import com.salon.salon_management.dto.SanPhamRequest;
 import com.salon.salon_management.entity.DanhMuc;
 import com.salon.salon_management.entity.SanPham;
@@ -16,15 +17,48 @@ public class SanPhamService {
     private final SanPhamRepository repository;
     private final DanhMucRepository danhMucRepository;
     private final ChiTietDonHangRepository chiTietDonHangRepository;
+    private final KhuyenMaiApDungService khuyenMaiApDungService;
 
-    public SanPhamService(
-            SanPhamRepository repository,
-            DanhMucRepository danhMucRepository,
-            ChiTietDonHangRepository chiTietDonHangRepository) {
+    
+
+    public SanPhamService(SanPhamRepository repository, DanhMucRepository danhMucRepository,
+            ChiTietDonHangRepository chiTietDonHangRepository, KhuyenMaiApDungService khuyenMaiApDungService) {
         this.repository = repository;
         this.danhMucRepository = danhMucRepository;
         this.chiTietDonHangRepository = chiTietDonHangRepository;
+        this.khuyenMaiApDungService = khuyenMaiApDungService;
     }
+
+    private SanPhamKhuyenMaiDTO toKhuyenMaiDTO(SanPham sp) {
+        Integer phanTramGiam = khuyenMaiApDungService
+                .layPhanTramGiamSanPham(sp.getMaSanPham());
+
+        Double giaSauGiam = khuyenMaiApDungService
+                .tinhGiaSauGiam(sp.getGia(), phanTramGiam);
+
+        SanPhamKhuyenMaiDTO dto = new SanPhamKhuyenMaiDTO();
+
+        dto.setMaSanPham(sp.getMaSanPham());
+        dto.setTenSanPham(sp.getTenSanPham());
+        dto.setMoTa(sp.getMoTa());
+        dto.setGia(sp.getGia());
+        dto.setGiaSauGiam(giaSauGiam);
+        dto.setPhanTramGiam(phanTramGiam);
+        dto.setHinhAnh(sp.getHinhAnh());
+        dto.setSoLuongTon(sp.getSoLuongTon());
+        dto.setTrangThai(sp.getTrangThai());
+        dto.setDanhMuc(sp.getDanhMuc());
+
+        return dto;
+    }
+
+    public List<SanPhamKhuyenMaiDTO> getAllWithKhuyenMai() {
+        return repository.findAll()
+                .stream()
+                .map(this::toKhuyenMaiDTO)
+                .toList();
+    }
+
 
     public List<SanPham> getAll() {
         return repository.findAll();

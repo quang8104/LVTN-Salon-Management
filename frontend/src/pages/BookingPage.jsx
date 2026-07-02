@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { getAllServices } from "../api/dichVuApi";
+import { getAllDichVuKhuyenMai } from "../api/dichVuApi";
 import { taoLich } from "../api/lichHenApi";
 import { filterBooking } from "../api/bookingApi";
 
@@ -14,15 +14,15 @@ function BookingPage() {
     const [employees, setEmployees] = useState([]);
     const [slots, setSlots] = useState([]);
 
+    const [gioiTinhDatLich, setGioiTinhDatLich] = useState("1");
+
     const [form, setForm] = useState({
         maNhanVien: "",
         ngayHen: "",
         gioHen: ""
     });
 
-    const formatDate = (date) => {
-        return date.toISOString().split("T")[0];
-    };
+    const formatDate = (date) => date.toISOString().split("T")[0];
 
     const today = new Date();
     const maxDate = new Date();
@@ -30,6 +30,61 @@ function BookingPage() {
 
     const minBookingDate = formatDate(today);
     const maxBookingDate = formatDate(maxDate);
+
+    useEffect(() => {
+        loadServices();
+    }, []);
+
+    useEffect(() => {
+        syncBooking();
+    }, [selectedServices, form.maNhanVien, form.ngayHen]);
+
+    const parseData = (data) => {
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data?.data)) return data.data;
+        if (Array.isArray(data?.content)) return data.content;
+        return [];
+    };
+
+    const loadServices = async () => {
+        try {
+            const res = await getAllDichVuKhuyenMai();
+            const data = parseData(res.data);
+
+            const activeServices = data.filter(
+                (item) => Number(item.trangThai) === 1
+            );
+
+            setServices(activeServices);
+
+            if (serviceIdFromDetail) {
+                const service = activeServices.find(
+                    (item) => item.maDichVu === Number(serviceIdFromDetail)
+                );
+
+                if (service) {
+                    const gt = Number(service.gioiTinhApDung || 0);
+
+                    if (gt === 2) {
+                        setGioiTinhDatLich("2");
+                    }
+
+                    setSelectedServices([service]);
+                }
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const filteredServices = services.filter((service) => {
+        const gioiTinhDichVu = Number(service.gioiTinhApDung || 0);
+
+        return (
+            gioiTinhDichVu === 0 ||
+            gioiTinhDichVu === Number(gioiTinhDatLich)
+        );
+    });
 
     const filterValidSlots = (slotList, selectedDate) => {
         if (!selectedDate) return slotList;
@@ -41,46 +96,13 @@ function BookingPage() {
         const now = new Date();
 
         return slotList.filter((slot) => {
-            const startTime = slot.start;
-            const [hour, minute] = startTime.split(":").map(Number);
+            const [hour, minute] = slot.start.split(":").map(Number);
 
             const slotDateTime = new Date();
             slotDateTime.setHours(hour, minute, 0, 0);
 
             return slotDateTime > now;
         });
-    };
-
-    useEffect(() => {
-        loadServices();
-    }, []);
-
-    useEffect(() => {
-        syncBooking();
-    }, [selectedServices, form.maNhanVien, form.ngayHen]);
-
-    const loadServices = async () => {
-        try {
-            const res = await getAllServices();
-
-            const activeServices = res.data.filter(
-                (item) => item.trangThai === 1
-            );
-
-            setServices(activeServices);
-
-            if (serviceIdFromDetail) {
-                const service = activeServices.find(
-                    (item) => item.maDichVu === Number(serviceIdFromDetail)
-                );
-
-                if (service) {
-                    setSelectedServices([service]);
-                }
-            }
-        } catch (error) {
-            console.log(error);
-        }
     };
 
     const syncBooking = async () => {
@@ -123,6 +145,18 @@ function BookingPage() {
         }
     };
 
+    const changeGioiTinhDatLich = (value) => {
+        setGioiTinhDatLich(value);
+        setSelectedServices([]);
+        setEmployees([]);
+        setSlots([]);
+        setForm({
+            maNhanVien: "",
+            ngayHen: "",
+            gioHen: ""
+        });
+    };
+
     const addService = (service) => {
         const existed = selectedServices.some(
             (item) => item.maDichVu === service.maDichVu
@@ -145,19 +179,10 @@ function BookingPage() {
     const change = (e) => {
         const { name, value } = e.target;
 
-        if (name === "maNhanVien") {
+        if (name === "maNhanVien" || name === "ngayHen") {
             setForm({
                 ...form,
-                maNhanVien: value,
-                gioHen: ""
-            });
-            return;
-        }
-
-        if (name === "ngayHen") {
-            setForm({
-                ...form,
-                ngayHen: value,
+                [name]: value,
                 gioHen: ""
             });
             return;
@@ -169,8 +194,12 @@ function BookingPage() {
         });
     };
 
+    const getPrice = (item) => {
+        return Number(item.giaSauGiam || item.gia || 0);
+    };
+
     const totalMoney = selectedServices.reduce(
-        (sum, item) => sum + Number(item.gia || 0),
+        (sum, item) => sum + getPrice(item),
         0
     );
 
@@ -255,21 +284,72 @@ function BookingPage() {
         return time.slice(0, 5).replace(":", "h");
     };
 
+    const renderPrice = (service) => {
+        const hasDiscount = Number(service.phanTramGiam || 0) > 0;
+
+        if (hasDiscount) {
+            return (
+                <>
+                    <div className="text-muted text-decoration-line-through">
+                        {Number(service.gia).toLocaleString()} VNĐ
+                    </div>
+
+                    <div className="text-danger fw-bold">
+                        {Number(service.giaSauGiam).toLocaleString()} VNĐ
+                    </div>
+
+                    <span className="badge bg-danger">
+                        -{service.phanTramGiam}%
+                    </span>
+                </>
+            );
+        }
+
+        return (
+            <p className="text-danger fw-bold">
+                {Number(service.gia).toLocaleString()} VNĐ
+            </p>
+        );
+    };
+
     return (
         <div className="container py-5">
             <div className="text-center mb-5">
                 <h2>ĐẶT LỊCH CẮT TÓC</h2>
                 <p className="text-muted">
-                    Chọn dịch vụ, ngày giờ. Nếu không chọn nhân viên, hệ thống sẽ tự phân công.
+                    Chọn giới tính người sử dụng dịch vụ, dịch vụ, ngày và giờ hẹn.
                 </p>
             </div>
 
             <div className="row g-4">
                 <div className="col-lg-8">
+                    <div className="card border-0 shadow-sm mb-4">
+                        <div className="card-body">
+                            <label className="form-label fw-bold">
+                                Người sử dụng dịch vụ
+                            </label>
+
+                            <select
+                                className="form-select"
+                                value={gioiTinhDatLich}
+                                onChange={(e) =>
+                                    changeGioiTinhDatLich(e.target.value)
+                                }
+                            >
+                                <option value="1">Nam</option>
+                                <option value="2">Nữ</option>
+                            </select>
+
+                            <small className="text-muted">
+                                Chọn Nam sẽ hiển thị dịch vụ nam và dịch vụ dùng chung. Chọn Nữ sẽ hiển thị dịch vụ nữ và dịch vụ dùng chung.
+                            </small>
+                        </div>
+                    </div>
+
                     <h4 className="mb-3">Chọn dịch vụ</h4>
 
                     <div className="row g-4">
-                        {services.map((service) => {
+                        {filteredServices.map((service) => {
                             const selected = selectedServices.some(
                                 (item) => item.maDichVu === service.maDichVu
                             );
@@ -297,16 +377,14 @@ function BookingPage() {
                                                 {service.thoiGianThucHien} phút
                                             </p>
 
-                                            <p className="text-danger fw-bold">
-                                                {Number(service.gia).toLocaleString()} VNĐ
-                                            </p>
+                                            {renderPrice(service)}
 
                                             <button
                                                 type="button"
                                                 className={
                                                     selected
-                                                        ? "btn btn-secondary w-100"
-                                                        : "btn btn-dark w-100"
+                                                        ? "btn btn-secondary w-100 mt-2"
+                                                        : "btn btn-dark w-100 mt-2"
                                                 }
                                                 disabled={selected}
                                                 onClick={() => addService(service)}
@@ -318,6 +396,14 @@ function BookingPage() {
                                 </div>
                             );
                         })}
+
+                        {filteredServices.length === 0 && (
+                            <div className="col-12 text-center py-5">
+                                <p className="text-muted">
+                                    Không có dịch vụ phù hợp với giới tính đã chọn.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -345,7 +431,7 @@ function BookingPage() {
                                         </div>
                                         <small>
                                             {item.thoiGianThucHien} phút -{" "}
-                                            {Number(item.gia).toLocaleString()} VNĐ
+                                            {getPrice(item).toLocaleString()} VNĐ
                                         </small>
                                     </div>
 
@@ -363,6 +449,7 @@ function BookingPage() {
                                 <p className="mb-1">
                                     <b>Tổng thời gian:</b> {totalTime} phút
                                 </p>
+
                                 <p>
                                     <b>Tổng tiền:</b>{" "}
                                     <span className="text-danger fw-bold">
@@ -408,14 +495,20 @@ function BookingPage() {
                                         max={maxBookingDate}
                                         required
                                     />
+
                                     <small className="text-muted">
                                         Chỉ được đặt lịch trong vòng 7 ngày sắp tới.
                                     </small>
                                 </div>
 
                                 <div className="mb-3">
-                                    <label className="form-label fw-bold">Chọn giờ trống</label>
-                                    <p className="text-muted mb-2">Vui lòng chọn khung giờ phù hợp</p>
+                                    <label className="form-label fw-bold">
+                                        Chọn giờ trống
+                                    </label>
+
+                                    <p className="text-muted mb-2">
+                                        Vui lòng chọn khung giờ phù hợp
+                                    </p>
 
                                     <div className="row g-2">
                                         {slots.map((slot, index) => {
@@ -445,17 +538,22 @@ function BookingPage() {
                                         })}
                                     </div>
 
-                                    {form.ngayHen && selectedServices.length > 0 && slots.length === 0 && (
-                                        <small className="text-danger d-block mt-2">
-                                            Không còn khung giờ phù hợp trong ngày này.
-                                        </small>
-                                    )}
+                                    {form.ngayHen &&
+                                        selectedServices.length > 0 &&
+                                        slots.length === 0 && (
+                                            <small className="text-danger d-block mt-2">
+                                                Không còn khung giờ phù hợp trong ngày này.
+                                            </small>
+                                        )}
 
-                                    {form.ngayHen && selectedServices.length > 0 && !form.gioHen && slots.length > 0 && (
-                                        <small className="text-danger d-block mt-2">
-                                            Vui lòng chọn giờ đặt lịch.
-                                        </small>
-                                    )}
+                                    {form.ngayHen &&
+                                        selectedServices.length > 0 &&
+                                        !form.gioHen &&
+                                        slots.length > 0 && (
+                                            <small className="text-danger d-block mt-2">
+                                                Vui lòng chọn giờ đặt lịch.
+                                            </small>
+                                        )}
                                 </div>
 
                                 <button className="btn btn-dark w-100">

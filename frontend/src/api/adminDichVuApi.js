@@ -17,3 +17,7 @@ export const updateDichVu = (id, data) => {
 export const deleteDichVu = (id) => {
     return axios.delete(`${API}/${id}`);
 };
+
+export const getAllDichVuKhuyenMai = () => {
+    return axios.get(`${API}/khuyen-mai`);
+};

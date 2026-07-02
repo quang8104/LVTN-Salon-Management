@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.salon.salon_management.dto.DichVuKhuyenMaiDTO;
 import com.salon.salon_management.entity.DichVu;
 import com.salon.salon_management.service.DichVuService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,7 +29,12 @@ public class DichVuController {
     public List<DichVu> getAll(){
         return service.getAll();
     }
-
+    
+    @GetMapping("/khuyen-mai")
+    public List<DichVuKhuyenMaiDTO> getAllWithKhuyenMai() {
+        return service.getAllWithKhuyenMai();
+    }
+    
     @GetMapping("/{id}")
     public DichVu getById(@PathVariable Integer id){
         return service.getByID(id);
@@ -48,4 +54,8 @@ public class DichVuController {
     public String delete(@PathVariable Integer id){
         return service.delete(id);
     }
+
+    
+
+    
 }

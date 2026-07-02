@@ -198,6 +198,12 @@ function AdminLayout() {
                             </span>
                         </NavLink>
                     </li>
+
+                    <li>
+                        <NavLink className={menuClass} to="/admin/khuyen-mai">
+                            🎁 Quản lý khuyến mãi
+                        </NavLink>
+                    </li>
                 </ul>
 
                 <div className="admin-sidebar-footer">

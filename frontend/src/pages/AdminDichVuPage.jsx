@@ -13,6 +13,10 @@ function AdminDichVuPage() {
     const [editingId, setEditingId] = useState(null);
     const [showForm, setShowForm] = useState(false);
     const [keyword, setKeyword] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState("ALL");
+    const [genderFilter, setGenderFilter] = useState("ALL");
+    const [statusFilter, setStatusFilter] = useState("ALL");
+    
 
     const [form, setForm] = useState({
         tenDichVu: "",
@@ -21,12 +25,24 @@ function AdminDichVuPage() {
         gia: "",
         thoiGianThucHien: "",
         anhGioiThieu: "",
-        trangThai: 1
+        trangThai: 1,
+        gioiTinhApDung: 0
     });
 
     useEffect(() => {
         loadData();
     }, []);
+
+    const gioiTinhText = (value) => {
+        switch (Number(value)) {
+            case 1:
+                return "Nam";
+            case 2:
+                return "Nữ";
+            default:
+                return "Cả nam và nữ";
+        }
+    };
 
     const loadData = async () => {
         try {
@@ -77,7 +93,8 @@ function AdminDichVuPage() {
             gia: "",
             thoiGianThucHien: "",
             anhGioiThieu: "",
-            trangThai: 1
+            trangThai: 1,
+            gioiTinhApDung: 0
         });
 
         setEditingId(null);
@@ -104,6 +121,7 @@ function AdminDichVuPage() {
             thoiGianThucHien: Number(form.thoiGianThucHien),
             anhGioiThieu: form.anhGioiThieu,
             trangThai: Number(form.trangThai),
+            gioiTinhApDung: Number(form.gioiTinhApDung),
             danhMucDichVu: {
                 maDanhMucDichVu: Number(form.maDanhMucDichVu)
             }
@@ -137,7 +155,8 @@ function AdminDichVuPage() {
             gia: item.gia || "",
             thoiGianThucHien: item.thoiGianThucHien || "",
             anhGioiThieu: item.anhGioiThieu || "",
-            trangThai: item.trangThai ?? 1
+            trangThai: item.trangThai ?? 1,
+            gioiTinhApDung: item.gioiTinhApDung ?? 0
         });
 
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -158,13 +177,28 @@ function AdminDichVuPage() {
 
     const filteredDichVu = dichVu.filter((item) => {
         const text = keyword.trim().toLowerCase();
-        if (!text) return true;
 
-        return (
+        const matchKeyword =
+            !text ||
             String(item.maDichVu).includes(text) ||
             item.tenDichVu?.toLowerCase().includes(text) ||
-            item.danhMucDichVu?.tenDanhMuc?.toLowerCase().includes(text)
-        );
+            item.danhMucDichVu?.tenDanhMuc?.toLowerCase().includes(text) ||
+            gioiTinhText(item.gioiTinhApDung).toLowerCase().includes(text);
+
+        const matchCategory =
+            categoryFilter === "ALL" ||
+            item.danhMucDichVu?.maDanhMucDichVu === Number(categoryFilter);
+
+        const matchGender =
+            genderFilter === "ALL" ||
+            Number(item.gioiTinhApDung || 0) === 0 ||
+            Number(item.gioiTinhApDung) === Number(genderFilter);
+
+        const matchStatus =
+            statusFilter === "ALL" ||
+            Number(item.trangThai) === Number(statusFilter);
+
+        return matchKeyword && matchCategory && matchGender && matchStatus;
     });
 
     return (
@@ -259,6 +293,20 @@ function AdminDichVuPage() {
                                 </div>
 
                                 <div className="col-md-3 mb-3">
+                                    <label className="form-label">Giới tính áp dụng</label>
+                                    <select
+                                        className="form-select"
+                                        name="gioiTinhApDung"
+                                        value={form.gioiTinhApDung}
+                                        onChange={change}
+                                    >
+                                        <option value={0}>Cả nam và nữ</option>
+                                        <option value={1}>Nam</option>
+                                        <option value={2}>Nữ</option>
+                                    </select>
+                                </div>
+
+                                <div className="col-md-3 mb-3">
                                     <label className="form-label">Trạng thái</label>
                                     <select
                                         className="form-select"
@@ -337,12 +385,73 @@ function AdminDichVuPage() {
 
             <div className="card border-0 shadow-sm mb-3">
                 <div className="card-body">
-                    <input
-                        className="form-control"
-                        placeholder="Tìm theo mã, tên dịch vụ hoặc danh mục..."
-                        value={keyword}
-                        onChange={(e) => setKeyword(e.target.value)}
-                    />
+                    <div className="row g-2">
+                        <div className="col-md-4">
+                            <input
+                                className="form-control"
+                                placeholder="Tìm theo mã, tên dịch vụ..."
+                                value={keyword}
+                                onChange={(e) => setKeyword(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="col-md-3">
+                            <select
+                                className="form-select"
+                                value={categoryFilter}
+                                onChange={(e) => setCategoryFilter(e.target.value)}
+                            >
+                                <option value="ALL">Tất cả danh mục</option>
+
+                                {danhMuc.map((item) => (
+                                    <option
+                                        key={item.maDanhMucDichVu}
+                                        value={item.maDanhMucDichVu}
+                                    >
+                                        {item.tenDanhMuc}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="col-md-2">
+                            <select
+                                className="form-select"
+                                value={genderFilter}
+                                onChange={(e) => setGenderFilter(e.target.value)}
+                            >
+                                <option value="ALL">Tất cả giới tính</option>
+                                <option value="1">Nam</option>
+                                <option value="2">Nữ</option>
+                            </select>
+                        </div>
+
+                        <div className="col-md-2">
+                            <select
+                                className="form-select"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="ALL">Tất cả trạng thái</option>
+                                <option value="1">Hoạt động</option>
+                                <option value="0">Ngừng</option>
+                            </select>
+                        </div>
+
+                        <div className="col-md-1">
+                            <button
+                                className="btn btn-outline-dark w-100"
+                                onClick={() => {
+                                    setKeyword("");
+                                    setCategoryFilter("ALL");
+                                    setGenderFilter("ALL");
+                                    setStatusFilter("ALL");
+                                }}
+                            >
+                                Reset
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -362,6 +471,7 @@ function AdminDichVuPage() {
                                 <th>Ảnh</th>
                                 <th>Tên</th>
                                 <th>Danh mục</th>
+                                <th>Giới tính</th>
                                 <th>Giá</th>
                                 <th>Thời gian</th>
                                 <th>Trạng thái</th>
@@ -394,7 +504,8 @@ function AdminDichVuPage() {
 
                                     <td className="fw-semibold">{item.tenDichVu}</td>
                                     <td>{item.danhMucDichVu?.tenDanhMuc || "-"}</td>
-                                    <td>{item.gia?.toLocaleString()} VNĐ</td>
+                                    <td>{gioiTinhText(item.gioiTinhApDung)}</td>
+                                    <td>{Number(item.gia || 0).toLocaleString()} VNĐ</td>
                                     <td>{item.thoiGianThucHien} phút</td>
 
                                     <td>
@@ -429,7 +540,7 @@ function AdminDichVuPage() {
 
                             {filteredDichVu.length === 0 && (
                                 <tr>
-                                    <td colSpan="8" className="text-center py-4">
+                                    <td colSpan="9" className="text-center py-4">
                                         Không tìm thấy dịch vụ phù hợp
                                     </td>
                                 </tr>
